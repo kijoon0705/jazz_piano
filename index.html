@@ -372,7 +372,6 @@ function Modal({title, onClose, children, footer}) {
 
 // ── Login Screen ──
 function LoginScreen() {
-  const [tab, setTab] = useState('login'); // login | signup
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [loading, setLoading] = useState(false);
@@ -386,19 +385,6 @@ function LoginScreen() {
     setLoading(false);
   };
 
-  const handleSignup = async e => {
-    e.preventDefault(); setErr(''); setLoading(true);
-    if (!isTeacherEmail(email)) {
-      setErr('선생님 계정만 직접 생성 가능합니다.\n학생 계정은 선생님이 앱에서 만들어드립니다.');
-      setLoading(false); return;
-    }
-    try {
-      await auth.createUserWithEmailAndPassword(email.trim(), pw);
-      // Firestore 문서는 onAuthStateChanged에서 자동 생성
-    } catch(ex) { setErr(errMsg(ex.code)); }
-    setLoading(false);
-  };
-
   return (
     <div className="login-wrap">
       <div className="login-card">
@@ -406,24 +392,9 @@ function LoginScreen() {
         <div className="login-title">Mojo Jazz Studio</div>
         <div className="login-sub">숙제 검사 트래커</div>
 
-        <div style={{display:'flex',background:'#f0f0f0',borderRadius:10,padding:3,marginBottom:20,gap:3}}>
-          <button type="button" onClick={()=>{setTab('login');setErr('');}}
-            style={{flex:1,padding:'8px',border:'none',borderRadius:7,fontWeight:700,fontSize:'.82rem',cursor:'pointer',
-              background:tab==='login'?'#fff':'transparent',color:tab==='login'?'#007aff':'#888',
-              boxShadow:tab==='login'?'0 1px 3px rgba(0,0,0,.15)':'none',transition:'all .2s'}}>
-            로그인
-          </button>
-          <button type="button" onClick={()=>{setTab('signup');setErr('');}}
-            style={{flex:1,padding:'8px',border:'none',borderRadius:7,fontWeight:700,fontSize:'.82rem',cursor:'pointer',
-              background:tab==='signup'?'#fff':'transparent',color:tab==='signup'?'#007aff':'#888',
-              boxShadow:tab==='signup'?'0 1px 3px rgba(0,0,0,.15)':'none',transition:'all .2s'}}>
-            계정 만들기
-          </button>
-        </div>
-
         {err && <div className="login-err" style={{whiteSpace:'pre-line'}}>{err}</div>}
 
-        <form onSubmit={tab==='login' ? handleLogin : handleSignup}>
+        <form onSubmit={handleLogin}>
           <div className="fg">
             <label className="flabel">이메일</label>
             <input className="finput" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@example.com" required autoFocus/>
@@ -434,12 +405,12 @@ function LoginScreen() {
           </div>
           <button className="btn btn-primary" type="submit" disabled={loading}
             style={{width:'100%',justifyContent:'center',padding:'12px'}}>
-            {loading ? '처리 중…' : tab==='login' ? '로그인' : '계정 만들기'}
+            {loading ? '처리 중…' : '로그인'}
           </button>
         </form>
 
         <div style={{textAlign:'center',marginTop:14,fontSize:'.72rem',color:'#bbb'}}>
-          {tab==='login' ? '학생은 선생님에게 계정을 받아 로그인하세요' : '선생님 이메일로만 계정 생성 가능합니다'}
+          학생은 선생님에게 계정을 받아 로그인하세요
         </div>
       </div>
     </div>
