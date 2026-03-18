@@ -483,7 +483,7 @@ function ConfirmModal({msg, onConfirm, onClose}) {
 // ── Assignment Form Modal ──
 function AssignmentModal({assignment, onSave, onClose}) {
   const [f, setF] = useState(assignment || {
-    title:'', song:'', startDate:todayStr(), endDate:'', dailyTarget:3, color:COLORS[0], notes:''
+    title:'', song:'', startDate:todayStr(), endDate:'', dailyTarget:3, color:COLORS[0], hand:'양손', notes:''
   });
   const set = (k,v) => setF(p=>({...p,[k]:v}));
   const valid = f.title&&f.song&&f.startDate&&f.endDate&&f.dailyTarget>0&&f.endDate>=f.startDate;
@@ -503,12 +503,22 @@ function AssignmentModal({assignment, onSave, onClose}) {
       </div>
       <div className="fg"><label className="flabel">일일 목표 횟수 *</label>
         <input className="finput" type="number" min="1" max="99" value={f.dailyTarget} onChange={e=>set('dailyTarget',Number(e.target.value))}/></div>
+      <div className="fg"><label className="flabel">손</label>
+        <div style={{display:'flex',gap:8,marginTop:4}}>
+          {['왼손','오른손','양손'].map(h=>(
+            <label key={h} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',borderRadius:10,border:`1.5px solid ${f.hand===h?'#007aff':'#e0e0e0'}`,background:f.hand===h?'#f0f5ff':'#fff',cursor:'pointer',fontSize:'.85rem',fontWeight:f.hand===h?700:400,transition:'all .2s'}}>
+              <input type="radio" name="hand" value={h} checked={f.hand===h} onChange={()=>set('hand',h)} style={{accentColor:'#007aff'}}/>
+              {h}
+            </label>
+          ))}
+        </div>
+      </div>
       <div className="fg"><label className="flabel">색상</label>
         <div className="color-row">{COLORS.map(c=>(
           <div key={c} className={`cdot${f.color===c?' sel':''}`} style={{background:c}} onClick={()=>set('color',c)}/>
         ))}</div></div>
       <div className="fg"><label className="flabel">메모</label>
-        <input className="finput" value={f.notes} onChange={e=>set('notes',e.target.value)} placeholder="선택사항"/></div>
+        <textarea className="finput" value={f.notes} onChange={e=>set('notes',e.target.value)} placeholder="선택사항" rows={3} style={{resize:'vertical',lineHeight:1.6}}/></div>
     </Modal>
   );
 }
@@ -695,15 +705,17 @@ function StatsView({assignments, logs, year, month}) {
 }
 
 // ── Assignments Panel ──
-function AssignmentsPanel({assignments, isTeacher, onAdd, onEdit, onDel}) {
+const HAND_EMOJI = {'왼손':'🤚','오른손':'✋','양손':'👐'};
+
+function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
   return (
     <div>
       <div className="card-header" style={{marginBottom:12}}>
         <span className="card-title">📝 숙제 목록</span>
-        {isTeacher&&<button className="btn btn-primary btn-sm" onClick={onAdd}>+ 숙제 추가</button>}
+        <button className="btn btn-primary btn-sm" onClick={onAdd}>+ 숙제 추가</button>
       </div>
       {assignments.length===0
-        ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">{isTeacher?'숙제를 추가해 보세요!':'등록된 숙제가 없습니다'}</div></div>
+        ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">숙제를 추가해 보세요!</div></div>
         : assignments.map(a=>(
           <div key={a.id} className="a-card" style={{borderLeftColor:a.color}}>
             <div className="a-card-top">
@@ -713,13 +725,14 @@ function AssignmentsPanel({assignments, isTeacher, onAdd, onEdit, onDel}) {
                 <div className="a-meta">
                   <span>📅 {a.startDate} ~ {a.endDate}</span>
                   <span>🎯 하루 {a.dailyTarget}회</span>
-                  {a.notes&&<span>💬 {a.notes}</span>}
+                  {a.hand&&<span>{HAND_EMOJI[a.hand]||'👐'} {a.hand}</span>}
                 </div>
+                {a.notes&&<div style={{fontSize:'.78rem',color:'#888',marginTop:6,whiteSpace:'pre-wrap',lineHeight:1.6}}>💬 {a.notes}</div>}
               </div>
-              {isTeacher&&<div className="a-actions">
+              <div className="a-actions">
                 <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(a)}>수정</button>
                 <button className="btn btn-danger btn-sm" onClick={()=>onDel(a)}>삭제</button>
-              </div>}
+              </div>
             </div>
           </div>
         ))
@@ -778,7 +791,7 @@ function StudentView({studentId, isTeacher}) {
 
         {tab==='calendar' && view==='monthly' && <MonthCal year={year} month={month} assignments={assignments} logs={logs} onDay={setPModal}/>}
         {tab==='calendar' && view==='weekly' && <WeekCal wStart={ws} assignments={assignments} logs={logs} onDay={setPModal}/>}
-        {tab==='assignments' && <AssignmentsPanel assignments={assignments} isTeacher={isTeacher}
+        {tab==='assignments' && <AssignmentsPanel assignments={assignments}
           onAdd={()=>setAModal({mode:'add',data:null})}
           onEdit={a=>setAModal({mode:'edit',data:a})}
           onDel={a=>setDelConf(a)}/>}
