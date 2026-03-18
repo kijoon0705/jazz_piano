@@ -235,11 +235,15 @@ const FIREBASE_CONFIG = {
   appId: "1:692823136708:web:c9f7a2a119691014c2ec91"
 };
 
-// 선생님 이메일 주소 (이 이메일로 가입하면 선생님 권한)
-const TEACHER_EMAIL = "kijoon0705@naver.com";
+// 선생님 이메일 목록 (이 이메일로 가입하면 선생님 권한)
+const TEACHER_EMAILS = [
+  "kijoon0705@naver.com",
+  "mojojazzpiano@naver.com"
+];
 /* ════════════════════════════════════════════════════════════ */
 
-const isConfigured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY" && TEACHER_EMAIL !== "YOUR_TEACHER_EMAIL@example.com";
+const isTeacherEmail = email => TEACHER_EMAILS.map(e=>e.toLowerCase()).includes((email||'').toLowerCase().trim());
+const isConfigured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
 
 let auth, db;
 if (isConfigured) {
@@ -368,32 +372,30 @@ function Modal({title, onClose, children, footer}) {
 
 // ── Login Screen ──
 function LoginScreen() {
+  const [tab, setTab] = useState('login'); // login | signup
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
-  const [mode, setMode] = useState('login'); // login | teacher-signup
 
   const handleLogin = async e => {
     e.preventDefault(); setErr(''); setLoading(true);
     try {
-      await auth.signInWithEmailAndPassword(email, pw);
-    } catch(ex) {
-      if ((ex.code==='auth/user-not-found'||ex.code==='auth/invalid-credential') && email===TEACHER_EMAIL) {
-        setMode('teacher-signup');
-      } else {
-        setErr(errMsg(ex.code));
-      }
-    }
+      await auth.signInWithEmailAndPassword(email.trim(), pw);
+    } catch(ex) { setErr(errMsg(ex.code)); }
     setLoading(false);
   };
 
-  const handleTeacherSignup = async e => {
+  const handleSignup = async e => {
     e.preventDefault(); setErr(''); setLoading(true);
+    if (!isTeacherEmail(email)) {
+      setErr('선생님 계정만 직접 생성 가능합니다.\n학생 계정은 선생님이 앱에서 만들어드립니다.');
+      setLoading(false); return;
+    }
     try {
-      const {user} = await auth.createUserWithEmailAndPassword(email, pw);
+      const {user} = await auth.createUserWithEmailAndPassword(email.trim(), pw);
       await db.collection('users').doc(user.uid).set({
-        name:'선생님', email, role:'teacher',
+        name:'선생님', email:email.trim(), role:'teacher',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     } catch(ex) { setErr(errMsg(ex.code)); }
@@ -407,14 +409,24 @@ function LoginScreen() {
         <div className="login-title">Mojo Jazz Studio</div>
         <div className="login-sub">숙제 검사 트래커</div>
 
-        {mode==='teacher-signup' && (
-          <div className="login-info">
-            선생님 계정({email})이 없습니다.<br/>비밀번호를 입력해 계정을 만드세요.
-          </div>
-        )}
-        {err && <div className="login-err">{err}</div>}
+        <div style={{display:'flex',background:'#f0f0f0',borderRadius:10,padding:3,marginBottom:20,gap:3}}>
+          <button type="button" onClick={()=>{setTab('login');setErr('');}}
+            style={{flex:1,padding:'8px',border:'none',borderRadius:7,fontWeight:700,fontSize:'.82rem',cursor:'pointer',
+              background:tab==='login'?'#fff':'transparent',color:tab==='login'?'#007aff':'#888',
+              boxShadow:tab==='login'?'0 1px 3px rgba(0,0,0,.15)':'none',transition:'all .2s'}}>
+            로그인
+          </button>
+          <button type="button" onClick={()=>{setTab('signup');setErr('');}}
+            style={{flex:1,padding:'8px',border:'none',borderRadius:7,fontWeight:700,fontSize:'.82rem',cursor:'pointer',
+              background:tab==='signup'?'#fff':'transparent',color:tab==='signup'?'#007aff':'#888',
+              boxShadow:tab==='signup'?'0 1px 3px rgba(0,0,0,.15)':'none',transition:'all .2s'}}>
+            계정 만들기
+          </button>
+        </div>
 
-        <form onSubmit={mode==='login' ? handleLogin : handleTeacherSignup}>
+        {err && <div className="login-err" style={{whiteSpace:'pre-line'}}>{err}</div>}
+
+        <form onSubmit={tab==='login' ? handleLogin : handleSignup}>
           <div className="fg">
             <label className="flabel">이메일</label>
             <input className="finput" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@example.com" required autoFocus/>
@@ -423,18 +435,15 @@ function LoginScreen() {
             <label className="flabel">비밀번호</label>
             <input className="finput" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" required/>
           </div>
-          <button className="btn btn-primary" type="submit" disabled={loading} style={{width:'100%',justifyContent:'center',padding:'12px'}}>
-            {loading ? '처리 중…' : mode==='login' ? '로그인' : '선생님 계정 만들기'}
+          <button className="btn btn-primary" type="submit" disabled={loading}
+            style={{width:'100%',justifyContent:'center',padding:'12px'}}>
+            {loading ? '처리 중…' : tab==='login' ? '로그인' : '계정 만들기'}
           </button>
-          {mode==='teacher-signup' && (
-            <button type="button" className="btn btn-secondary" style={{width:'100%',justifyContent:'center',marginTop:8}} onClick={()=>setMode('login')}>← 뒤로</button>
-          )}
         </form>
-        {mode==='login' && (
-          <div style={{textAlign:'center',marginTop:16,fontSize:'.75rem',color:'#bbb'}}>
-            학생은 선생님에게 계정을 받아 로그인하세요
-          </div>
-        )}
+
+        <div style={{textAlign:'center',marginTop:14,fontSize:'.72rem',color:'#bbb'}}>
+          {tab==='login' ? '학생은 선생님에게 계정을 받아 로그인하세요' : '선생님 이메일로만 계정 생성 가능합니다'}
+        </div>
       </div>
     </div>
   );
@@ -927,7 +936,16 @@ function App() {
       setAuthUser(user);
       if (user) {
         const doc = await db.collection('users').doc(user.uid).get();
-        setUserDoc(doc.exists ? {id:doc.id,...doc.data()} : null);
+        if (doc.exists) {
+          setUserDoc({id:doc.id,...doc.data()});
+        } else if (isTeacherEmail(user.email)) {
+          // 선생님 이메일로 처음 로그인 시 Firestore 문서 자동 생성
+          const data = {name:'선생님', email:user.email, role:'teacher', createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+          await db.collection('users').doc(user.uid).set(data);
+          setUserDoc({id:user.uid, ...data});
+        } else {
+          setUserDoc(null);
+        }
       } else { setUserDoc(null); }
     });
   }, []);
