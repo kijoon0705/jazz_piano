@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎹 Mojo Jazz Studio - 숙제 검사 트래커</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh}
+.app{max-width:1200px;margin:0 auto;padding:16px}
+
+/* Header */
+.header{background:#fff;border-radius:16px;padding:14px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.header-title{font-size:1.3rem;font-weight:800;color:#1d1d1f}
+.view-toggle{display:flex;gap:3px;background:#f0f0f0;padding:3px;border-radius:10px}
+.view-toggle .vbtn{padding:6px 14px;font-size:.8rem;font-weight:600;border:none;border-radius:7px;background:transparent;color:#888;cursor:pointer;transition:all .2s}
+.view-toggle .vbtn.active{background:#fff;color:#007aff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+
+/* Tab bar */
+.tab-bar{display:flex;gap:4px;background:#fff;padding:6px;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.tab-btn{flex:1;padding:10px;border:none;border-radius:10px;background:transparent;font-size:.85rem;font-weight:600;color:#888;cursor:pointer;transition:all .2s}
+.tab-btn.active{background:#f0f5ff;color:#007aff}
+
+/* Buttons */
+.btn{padding:8px 16px;border:none;border-radius:10px;cursor:pointer;font-size:.875rem;font-weight:600;transition:all .2s}
+.btn-primary{background:#007aff;color:#fff}
+.btn-primary:hover{background:#0056cc}
+.btn-secondary{background:#f0f0f0;color:#333}
+.btn-secondary:hover{background:#e0e0e0}
+.btn-danger{background:#ff3b30;color:#fff}
+.btn-danger:hover{background:#cc0000}
+.btn-sm{padding:5px 10px;font-size:.75rem;border-radius:7px}
+
+/* Card */
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:1.05rem;font-weight:700}
+
+/* Nav controls */
+.nav-controls{display:flex;align-items:center;gap:10px}
+.nav-label{font-size:1rem;font-weight:700;min-width:130px;text-align:center}
+.nav-btn{background:#f0f0f0;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background .2s;line-height:1}
+.nav-btn:hover{background:#e0e0e0}
+
+/* Calendar grid */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.day-lbl{text-align:center;font-size:.72rem;font-weight:700;color:#aaa;padding:6px 2px}
+.day-lbl.sun{color:#ff3b30}
+.day-lbl.sat{color:#007aff}
+
+/* Day cell */
+.day-cell{min-height:88px;border-radius:10px;padding:6px 5px;background:#fafafa;border:1.5px solid #f0f0f0;cursor:pointer;transition:background .15s;overflow:hidden}
+.day-cell:hover{background:#f0f5ff;border-color:#c0d8ff}
+.day-cell.today{border-color:#007aff;background:#f0f5ff}
+.day-cell.other-month{opacity:.35}
+.day-num{font-size:.78rem;font-weight:700;margin-bottom:3px;display:flex;align-items:center}
+.day-num.sun{color:#ff3b30}
+.day-num.sat{color:#007aff}
+.today-bubble{background:#007aff;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem}
+.a-tag{font-size:.62rem;padding:2px 5px;border-radius:4px;color:#fff;margin-bottom:2px;display:flex;gap:3px;align-items:center;overflow:hidden}
+.a-tag.done{opacity:.65;text-decoration:line-through}
+.a-tag-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.a-tag-cnt{font-weight:800;flex-shrink:0}
+.more-lbl{font-size:.6rem;color:#aaa;text-align:center}
+/* Mobile dots (hidden on desktop) */
+.dot-row{display:none;gap:3px;flex-wrap:wrap;margin-top:2px}
+.dot{width:7px;height:7px;border-radius:50%}
+
+/* Weekly grid */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.week-day{background:#fafafa;border-radius:12px;padding:8px 6px;border:1.5px solid #f0f0f0;min-height:160px}
+.week-day.today{border-color:#007aff}
+.wday-hdr{text-align:center;margin-bottom:8px}
+.wday-name{font-size:.68rem;color:#aaa;font-weight:700}
+.wday-name.sun{color:#ff3b30}
+.wday-name.sat{color:#007aff}
+.wday-num{font-size:1rem;font-weight:700}
+.wday-num.today-b{background:#007aff;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:.85rem}
+.wday-num.sun-n{color:#ff3b30}
+.wday-num.sat-n{color:#007aff}
+
+/* Practice item */
+.pr-item{background:#fff;border-radius:8px;padding:7px;margin-bottom:5px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.pr-title{font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.pr-song{font-size:.65rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
+.pr-progress{display:flex;align-items:center;gap:5px}
+.pbar-wrap{flex:1;background:#f0f0f0;border-radius:3px;height:5px;overflow:hidden}
+.pbar{height:100%;border-radius:3px;transition:width .3s}
+.pr-cnt{font-size:.65rem;color:#888;white-space:nowrap}
+.wday-empty{font-size:.7rem;color:#ddd;text-align:center;margin-top:8px}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:1.1rem;font-weight:700}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* Form */
+.fg{margin-bottom:14px}
+.flabel{display:block;font-size:.82rem;font-weight:600;color:#555;margin-bottom:5px}
+.finput{width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:.9rem;transition:border-color .2s;font-family:inherit}
+.finput:focus{outline:none;border-color:#007aff}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.cdot{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .2s;border:3px solid transparent}
+.cdot:hover,.cdot.sel{transform:scale(1.25);border-color:#1d1d1f}
+
+/* Log entry */
+.log-entry{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafafa;border-radius:12px;margin-bottom:8px;border-left:4px solid}
+.log-info{flex:1;min-width:0}
+.log-name{font-weight:700;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-song{font-size:.73rem;color:#aaa;margin-bottom:5px}
+.log-pbar{height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-bottom:3px}
+.log-pbar-fill{height:100%;border-radius:3px}
+.log-target{font-size:.7rem;color:#aaa}
+.cnt-ctrl{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
+.cnt-btns{display:flex;align-items:center;gap:6px}
+.cnt-btn{width:28px;height:28px;border-radius:50%;border:none;background:#007aff;color:#fff;cursor:pointer;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cnt-btn:hover{background:#0056cc}
+.cnt-val{font-size:1.1rem;font-weight:800;min-width:30px;text-align:center}
+.chk-btn{width:22px;height:22px;border-radius:6px;border:2px solid #ccc;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .2s;flex-shrink:0}
+.chk-btn.on{background:#34c759;border-color:#34c759;color:#fff}
+
+/* Assignment card */
+.a-card{border:1.5px solid #f0f0f0;border-radius:12px;padding:14px;margin-bottom:10px;border-left-width:5px;transition:box-shadow .2s}
+.a-card:hover{box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.a-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.a-name{font-weight:700;font-size:.95rem}
+.a-song{font-size:.8rem;color:#888;margin:3px 0 6px}
+.a-meta{font-size:.73rem;color:#bbb;display:flex;gap:10px;flex-wrap:wrap}
+.a-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* Stats */
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:#fafafa;border-radius:12px;padding:14px;text-align:center}
+.stat-num{font-size:2rem;font-weight:800;color:#007aff;line-height:1}
+.stat-lbl{font-size:.75rem;color:#aaa;margin-top:4px}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.chart-card{background:#fafafa;border-radius:12px;padding:14px}
+.chart-card.full{grid-column:1/-1}
+.chart-ttl{font-size:.85rem;font-weight:700;color:#555;margin-bottom:10px}
+.a-detail-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f5f5f5}
+.a-detail-pbar{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-top:4px}
+.a-detail-fill{height:100%;border-radius:3px}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:#ccc}
+.empty-icon{font-size:2.5rem;margin-bottom:10px}
+.empty-txt{font-size:.88rem}
+
+/* Responsive */
+@media(max-width:768px){
+  .app{padding:8px}
+  .header{padding:10px 14px}
+  .header-title{font-size:1.05rem}
+  .cal-grid{gap:2px}
+  .day-cell{min-height:56px;padding:4px 3px}
+  .day-num{font-size:.7rem}
+  .a-tag{display:none}
+  .more-lbl{display:none}
+  .dot-row{display:flex}
+  .week-grid{gap:3px}
+  .week-day{padding:5px 3px;min-height:110px}
+  .pr-item{padding:5px}
+  .pr-title{font-size:.68rem}
+  .modal{padding:16px;border-radius:16px}
+  .frow{grid-template-columns:1fr}
+  .nav-label{min-width:100px;font-size:.85rem}
+  .btn{padding:6px 12px;font-size:.78rem}
+  .stat-num{font-size:1.5rem}
+  .log-name{font-size:.82rem}
+}
+@media(max-width:480px){
+  .wday-name{font-size:.58rem}
+  .wday-num{font-size:.85rem}
+  .wday-num.today-b{width:24px;height:24px;font-size:.75rem}
+  .week-day{min-height:90px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useRef} = React;
+
+const COLORS = ['#007aff','#ff3b30','#34c759','#ff9500','#af52de','#ff2d55','#5ac8fa','#ffcc00'];
+const DAYS = ['일','월','화','수','목','금','토'];
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+const toStr = d => {
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+};
+const todayStr = () => toStr(new Date());
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+function useLS(key, init) {
+  const [v, setV] = useState(() => { try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; } });
+  useEffect(() => { localStorage.setItem(key, JSON.stringify(v)); }, [key, v]);
+  return [v, setV];
+}
+
+function isActive(a, dateStr) { return dateStr >= a.startDate && dateStr <= a.endDate; }
+function getLog(logs, aid, dateStr) { return logs.find(l => l.assignmentId === aid && l.date === dateStr); }
+
+function weekStart(date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+/* ── Modal wrapper ── */
+function Modal({title, onClose, children, footer}) {
+  return (
+    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-hdr">
+          <span className="modal-title">{title}</span>
+          <button className="btn btn-secondary btn-sm" onClick={onClose}>✕</button>
+        </div>
+        {children}
+        {footer && <div className="modal-footer">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Assignment form modal ── */
+function AssignmentModal({assignment, onSave, onClose}) {
+  const [f, setF] = useState(assignment || {
+    title:'', song:'', startDate:todayStr(), endDate:'', dailyTarget:3, color:COLORS[0], notes:''
+  });
+  const set = (k,v) => setF(p=>({...p,[k]:v}));
+  const valid = f.title && f.song && f.startDate && f.endDate && f.dailyTarget > 0 && f.endDate >= f.startDate;
+  return (
+    <Modal title={assignment ? '숙제 수정' : '숙제 추가'} onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-primary" disabled={!valid} onClick={()=>onSave(f)}>저장</button></>}>
+      <div className="fg">
+        <label className="flabel">숙제 이름 *</label>
+        <input className="finput" value={f.title} onChange={e=>set('title',e.target.value)} placeholder="예: 바이엘 30번"/>
+      </div>
+      <div className="fg">
+        <label className="flabel">곡 *</label>
+        <input className="finput" value={f.song} onChange={e=>set('song',e.target.value)} placeholder="예: Für Elise"/>
+      </div>
+      <div className="frow">
+        <div className="fg">
+          <label className="flabel">시작일 *</label>
+          <input className="finput" type="date" value={f.startDate} onChange={e=>set('startDate',e.target.value)}/>
+        </div>
+        <div className="fg">
+          <label className="flabel">종료일 *</label>
+          <input className="finput" type="date" value={f.endDate} min={f.startDate} onChange={e=>set('endDate',e.target.value)}/>
+        </div>
+      </div>
+      <div className="fg">
+        <label className="flabel">일일 목표 횟수 *</label>
+        <input className="finput" type="number" min="1" max="99" value={f.dailyTarget} onChange={e=>set('dailyTarget',Number(e.target.value))}/>
+      </div>
+      <div className="fg">
+        <label className="flabel">색상</label>
+        <div className="color-row">{COLORS.map(c=>(
+          <div key={c} className={`cdot${f.color===c?' sel':''}`} style={{background:c}} onClick={()=>set('color',c)}/>
+        ))}</div>
+      </div>
+      <div className="fg">
+        <label className="flabel">메모</label>
+        <input className="finput" value={f.notes} onChange={e=>set('notes',e.target.value)} placeholder="선택사항"/>
+      </div>
+    </Modal>
+  );
+}
+
+/* ── Practice log modal ── */
+function PracticeModal({dateStr, assignments, logs, onSave, onClose}) {
+  const active = assignments.filter(a => isActive(a, dateStr));
+  const [ls, setLs] = useState(() => active.map(a => {
+    const ex = getLog(logs, a.id, dateStr);
+    return {assignmentId:a.id, date:dateStr, count:ex?.count??0, completed:ex?.completed??false};
+  }));
+  const upd = (i,k,v) => setLs(p=>p.map((x,j)=>j===i?{...x,[k]:v}:x));
+  const dt = new Date(dateStr+'T00:00:00');
+  const lbl = `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})`;
+  return (
+    <Modal title={`연습 기록 — ${lbl}`} onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-primary" onClick={()=>onSave(ls)}>저장</button></>}>
+      {active.length === 0
+        ? <div className="empty"><div className="empty-icon">📭</div><div className="empty-txt">이 날 할당된 숙제가 없습니다</div></div>
+        : active.map((a,i)=>{
+          const l = ls[i];
+          const pct = Math.min(100, Math.round((l.count/a.dailyTarget)*100));
+          return (
+            <div key={a.id} className="log-entry" style={{borderLeftColor:a.color}}>
+              <div className="log-info">
+                <div className="log-name">{a.title}</div>
+                <div className="log-song">🎵 {a.song}</div>
+                <div className="log-pbar"><div className="log-pbar-fill" style={{width:`${pct}%`,background:a.color}}/></div>
+                <div className="log-target">목표: {a.dailyTarget}회 ({pct}%)</div>
+              </div>
+              <div className="cnt-ctrl">
+                <div className="cnt-btns">
+                  <button className="cnt-btn" onClick={()=>upd(i,'count',Math.max(0,l.count-1))}>−</button>
+                  <span className="cnt-val">{l.count}</span>
+                  <button className="cnt-btn" onClick={()=>upd(i,'count',l.count+1)}>+</button>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:5}}>
+                  <button className={`chk-btn${l.completed?' on':''}`} onClick={()=>upd(i,'completed',!l.completed)} title="완료">
+                    {l.completed?'✓':''}
+                  </button>
+                  <span style={{fontSize:'.65rem',color:'#aaa'}}>완료</span>
+                </div>
+              </div>
+            </div>
+          );
+        })
+      }
+    </Modal>
+  );
+}
+
+/* ── Delete confirm ── */
+function ConfirmModal({msg, onConfirm, onClose}) {
+  return (
+    <Modal title="삭제 확인" onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-danger" onClick={onConfirm}>삭제</button></>}>
+      <p style={{color:'#555',lineHeight:1.6}}>{msg}</p>
+    </Modal>
+  );
+}
+
+/* ── Monthly Calendar ── */
+function MonthCal({year, month, assignments, logs, onDay}) {
+  const ts = todayStr();
+  const first = new Date(year, month, 1).getDay();
+  const dim = new Date(year, month+1, 0).getDate();
+  const dipm = new Date(year, month, 0).getDate();
+  const cells = [];
+  for (let i=first-1;i>=0;i--) {
+    const d=dipm-i, m2=month===0?12:month, y2=month===0?year-1:year;
+    cells.push({day:d, ds:`${y2}-${String(m2).padStart(2,'0')}-${String(d).padStart(2,'0')}`, cur:false});
+  }
+  for (let d=1;d<=dim;d++) {
+    cells.push({day:d, ds:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, cur:true});
+  }
+  const rem = 42-cells.length;
+  for (let d=1;d<=rem;d++) {
+    const nm=month+2>12?1:month+2, ny=month+2>12?year+1:year;
+    cells.push({day:d, ds:`${ny}-${String(nm).padStart(2,'0')}-${String(d).padStart(2,'0')}`, cur:false});
+  }
+  return (
+    <div className="cal-grid">
+      {DAYS.map((d,i)=><div key={d} className={`day-lbl${i===0?' sun':i===6?' sat':''}`}>{d}</div>)}
+      {cells.map((c,idx)=>{
+        const dow=idx%7, isT=c.ds===ts;
+        const active=assignments.filter(a=>isActive(a,c.ds));
+        const doneCount=active.filter(a=>getLog(logs,a.id,c.ds)?.completed).length;
+        return (
+          <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`} onClick={()=>onDay(c.ds)}>
+            <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>
+              {isT ? <span className="today-bubble">{c.day}</span> : c.day}
+              {doneCount>0 && active.length>0 && <span style={{fontSize:'.55rem',color:'#34c759',marginLeft:3,fontWeight:800}}>✓{doneCount}</span>}
+            </div>
+            {active.slice(0,3).map(a=>{
+              const lg=getLog(logs,a.id,c.ds);
+              const cnt=lg?.count??0;
+              return (
+                <div key={a.id} className={`a-tag${lg?.completed?' done':''}`} style={{background:a.color}}>
+                  <span className="a-tag-name">{a.title}</span>
+                  <span className="a-tag-cnt">{cnt}/{a.dailyTarget}</span>
+                </div>
+              );
+            })}
+            {active.length>3 && <div className="more-lbl">+{active.length-3}</div>}
+            <div className="dot-row">
+              {active.slice(0,5).map(a=>{
+                const lg=getLog(logs,a.id,c.ds);
+                return <div key={a.id} className="dot" style={{background:lg?.completed?a.color:'#e0e0e0',border:`1.5px solid ${a.color}`}}/>;
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Weekly Calendar ── */
+function WeekCal({wStart, assignments, logs, onDay}) {
+  const ts = todayStr();
+  const days = Array.from({length:7},(_,i)=>{
+    const d=new Date(wStart); d.setDate(d.getDate()+i); return {date:d, ds:toStr(d)};
+  });
+  return (
+    <div className="week-grid">
+      {days.map(({date,ds},i)=>{
+        const isT=ds===ts, dow=date.getDay();
+        const active=assignments.filter(a=>isActive(a,ds));
+        return (
+          <div key={ds} className={`week-day${isT?' today':''}`} onClick={()=>onDay(ds)}>
+            <div className="wday-hdr">
+              <div className={`wday-name${dow===0?' sun':dow===6?' sat':''}`}>{DAYS[dow]}</div>
+              <div className={`wday-num${isT?' today-b':dow===0?' sun-n':dow===6?' sat-n':''}`}>{date.getDate()}</div>
+            </div>
+            {active.length===0 && <div className="wday-empty">—</div>}
+            {active.map(a=>{
+              const lg=getLog(logs,a.id,ds);
+              const cnt=lg?.count??0;
+              const pct=Math.min(100,Math.round((cnt/a.dailyTarget)*100));
+              return (
+                <div key={a.id} className="pr-item" style={{borderLeftColor:a.color}}>
+                  <div className="pr-title">{a.title}</div>
+                  <div className="pr-song">{a.song}</div>
+                  <div className="pr-progress">
+                    <div className="pbar-wrap"><div className="pbar" style={{width:`${pct}%`,background:a.color}}/></div>
+                    <span className="pr-cnt">{cnt}/{a.dailyTarget}</span>
+                  </div>
+                  {lg?.completed && <div style={{fontSize:'.62rem',color:'#34c759',fontWeight:700,marginTop:2}}>✓ 완료</div>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Stats View ── */
+function StatsView({assignments, logs, year, month}) {
+  const refs = useRef({});
+  const charts = useRef({});
+  const ms = `${year}-${String(month+1).padStart(2,'0')}`;
+  const mLogs = logs.filter(l=>l.date.startsWith(ms));
+  const totalCount = mLogs.reduce((s,l)=>s+(l.count||0),0);
+  const totalDone = mLogs.filter(l=>l.completed).length;
+
+  const dim = new Date(year,month+1,0).getDate();
+  const stats = assignments.map(a=>{
+    let active=0,tgt=0,actual=0,done=0;
+    for (let d=1;d<=dim;d++) {
+      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if (isActive(a,ds)) {
+        active++; tgt+=a.dailyTarget;
+        const lg=getLog(logs,a.id,ds);
+        if (lg) { actual+=lg.count||0; if(lg.completed) done++; }
+      }
+    }
+    return {...a, active, tgt, actual, done, rate:tgt>0?Math.round((actual/tgt)*100):0};
+  }).filter(a=>a.active>0);
+
+  const avgRate = stats.length>0 ? Math.round(stats.reduce((s,a)=>s+a.rate,0)/stats.length) : 0;
+
+  useEffect(()=>{
+    const build = (key, type, data, opts) => {
+      if (charts.current[key]) charts.current[key].destroy();
+      const c = refs.current[key];
+      if (!c) return;
+      charts.current[key] = new Chart(c, {type, data, options:{responsive:true,maintainAspectRatio:false,...opts}});
+    };
+
+    if (stats.length>0) {
+      build('bar','bar',{
+        labels:stats.map(a=>a.title),
+        datasets:[{label:'달성률(%)',data:stats.map(a=>a.rate),
+          backgroundColor:stats.map(a=>a.color+'bb'),borderColor:stats.map(a=>a.color),
+          borderWidth:2,borderRadius:6}]
+      },{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}});
+
+      build('doughnut','doughnut',{
+        labels:stats.map(a=>a.title),
+        datasets:[{data:stats.map(a=>a.actual),backgroundColor:stats.map(a=>a.color+'bb'),borderColor:stats.map(a=>a.color),borderWidth:2}]
+      },{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}});
+    }
+
+    const dailyCounts = Array.from({length:dim},(_,i)=>{
+      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
+      return mLogs.filter(l=>l.date===ds).reduce((s,l)=>s+(l.count||0),0);
+    });
+    build('line','line',{
+      labels:Array.from({length:dim},(_,i)=>`${i+1}`),
+      datasets:[{label:'연습 횟수',data:dailyCounts,borderColor:'#007aff',backgroundColor:'#007aff22',fill:true,tension:.3,pointRadius:3,pointHoverRadius:5}]
+    },{plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{stepSize:1},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{maxTicksLimit:15}}}});
+
+    return ()=>{ Object.values(charts.current).forEach(c=>c&&c.destroy()); charts.current={}; };
+  },[year,month,JSON.stringify(mLogs),stats.length]);
+
+  if (stats.length===0 && totalCount===0) return (
+    <div style={{marginTop:16}}>
+      <div className="empty"><div className="empty-icon">📊</div><div className="empty-txt">이번 달 연습 데이터가 없습니다</div></div>
+    </div>
+  );
+
+  return (
+    <div style={{marginTop:16}}>
+      <div className="stat-cards">
+        <div className="stat-card"><div className="stat-num">{totalCount}</div><div className="stat-lbl">총 연습 횟수</div></div>
+        <div className="stat-card"><div className="stat-num">{totalDone}</div><div className="stat-lbl">완료 체크</div></div>
+        <div className="stat-card"><div className="stat-num">{stats.length}</div><div className="stat-lbl">진행 숙제</div></div>
+        <div className="stat-card"><div className="stat-num" style={{color:avgRate>=80?'#34c759':avgRate>=50?'#ff9500':'#ff3b30'}}>{avgRate}%</div><div className="stat-lbl">평균 달성률</div></div>
+      </div>
+      <div className="charts-grid">
+        {stats.length>0 && <>
+          <div className="chart-card">
+            <div className="chart-ttl">숙제별 달성률</div>
+            <div style={{height:200}}><canvas ref={el=>refs.current['bar']=el}/></div>
+          </div>
+          <div className="chart-card">
+            <div className="chart-ttl">숙제별 연습 비중</div>
+            <div style={{height:200}}><canvas ref={el=>refs.current['doughnut']=el}/></div>
+          </div>
+        </>}
+        <div className="chart-card full">
+          <div className="chart-ttl">일별 연습 횟수</div>
+          <div style={{height:160}}><canvas ref={el=>refs.current['line']=el}/></div>
+        </div>
+      </div>
+      {stats.length>0 && (
+        <div style={{marginTop:16}}>
+          <div style={{fontWeight:700,fontSize:'.9rem',marginBottom:10,color:'#555'}}>숙제별 상세</div>
+          {stats.map(a=>(
+            <div key={a.id} className="a-detail-row">
+              <div style={{width:12,height:12,borderRadius:'50%',background:a.color,flexShrink:0}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:'.85rem'}}>{a.title} <span style={{fontWeight:400,color:'#aaa'}}>— {a.song}</span></div>
+                <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${a.rate}%`,background:a.color}}/></div>
+              </div>
+              <div style={{textAlign:'right',flexShrink:0}}>
+                <div style={{fontWeight:800,color:a.color,fontSize:'1rem'}}>{a.rate}%</div>
+                <div style={{fontSize:'.7rem',color:'#aaa'}}>{a.actual}/{a.tgt}회</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Assignments Panel ── */
+function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
+  return (
+    <div className="card" style={{marginTop:0}}>
+      <div className="card-header">
+        <span className="card-title">📝 숙제 관리</span>
+        <button className="btn btn-primary btn-sm" onClick={onAdd}>+ 숙제 추가</button>
+      </div>
+      {assignments.length===0
+        ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">등록된 숙제가 없습니다<br/>숙제를 추가해 보세요!</div></div>
+        : assignments.map(a=>(
+          <div key={a.id} className="a-card" style={{borderLeftColor:a.color}}>
+            <div className="a-card-top">
+              <div style={{minWidth:0}}>
+                <div className="a-name">{a.title}</div>
+                <div className="a-song">🎵 {a.song}</div>
+                <div className="a-meta">
+                  <span>📅 {a.startDate} ~ {a.endDate}</span>
+                  <span>🎯 하루 {a.dailyTarget}회</span>
+                  {a.notes && <span>💬 {a.notes}</span>}
+                </div>
+              </div>
+              <div className="a-actions">
+                <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(a)}>수정</button>
+                <button className="btn btn-danger btn-sm" onClick={()=>onDel(a)}>삭제</button>
+              </div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
+/* ── App ── */
+function App() {
+  const [assignments, setAssignments] = useLS('piano_assignments', []);
+  const [logs, setLogs] = useLS('piano_logs', []);
+  const [view, setView] = useState('monthly');
+  const [tab, setTab] = useState('calendar');
+  const [cur, setCur] = useState(new Date());
+  const [aModal, setAModal] = useState(null);
+  const [pModal, setPModal] = useState(null);
+  const [delConf, setDelConf] = useState(null);
+
+  const year = cur.getFullYear(), month = cur.getMonth();
+  const ws = weekStart(cur);
+
+  const prev = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()-1):d.setDate(d.getDate()-7); setCur(d); };
+  const next = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()+1):d.setDate(d.getDate()+7); setCur(d); };
+
+  const navLabel = () => {
+    if (view==='monthly') return `${year}년 ${MONTHS[month]}`;
+    const we=new Date(ws); we.setDate(we.getDate()+6);
+    return `${ws.getMonth()+1}/${ws.getDate()} — ${we.getMonth()+1}/${we.getDate()}`;
+  };
+
+  const saveAssignment = f => {
+    if (aModal.mode==='add') setAssignments(p=>[...p,{...f,id:uid()}]);
+    else setAssignments(p=>p.map(a=>a.id===aModal.data.id?{...f,id:a.id}:a));
+    setAModal(null);
+  };
+
+  const deleteAssignment = a => {
+    setAssignments(p=>p.filter(x=>x.id!==a.id));
+    setLogs(p=>p.filter(l=>l.assignmentId!==a.id));
+    setDelConf(null);
+  };
+
+  const saveLogs = newLogs => {
+    setLogs(p=>{
+      let u=[...p];
+      newLogs.forEach(nl=>{
+        const i=u.findIndex(l=>l.assignmentId===nl.assignmentId&&l.date===nl.date);
+        if (i>=0) u[i]={...u[i],...nl}; else u.push({id:uid(),...nl});
+      });
+      return u;
+    });
+    setPModal(null);
+  };
+
+  return (
+    <div className="app">
+      <div className="header">
+        <span className="header-title">🎹 Mojo Jazz Studio - 숙제 검사 트래커</span>
+        {tab!=='assignments' && (
+          <div className="view-toggle">
+            <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
+            <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
+          </div>
+        )}
+      </div>
+
+      <div className="tab-bar">
+        <button className={`tab-btn${tab==='calendar'?' active':''}`} onClick={()=>setTab('calendar')}>📅 캘린더</button>
+        <button className={`tab-btn${tab==='assignments'?' active':''}`} onClick={()=>setTab('assignments')}>📝 숙제</button>
+        <button className={`tab-btn${tab==='stats'?' active':''}`} onClick={()=>setTab('stats')}>📊 통계</button>
+      </div>
+
+      {tab==='assignments'
+        ? <AssignmentsPanel assignments={assignments}
+            onAdd={()=>setAModal({mode:'add',data:null})}
+            onEdit={a=>setAModal({mode:'edit',data:a})}
+            onDel={a=>setDelConf(a)}/>
+        : (
+          <div className="card">
+            <div className="card-header">
+              <div className="nav-controls">
+                <button className="nav-btn" onClick={prev}>‹</button>
+                <span className="nav-label">{navLabel()}</span>
+                <button className="nav-btn" onClick={next}>›</button>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
+            </div>
+
+            {tab==='calendar' && view==='monthly' &&
+              <MonthCal year={year} month={month} assignments={assignments} logs={logs} onDay={setPModal}/>}
+            {tab==='calendar' && view==='weekly' &&
+              <WeekCal wStart={ws} assignments={assignments} logs={logs} onDay={setPModal}/>}
+            {tab==='stats' &&
+              <StatsView assignments={assignments} logs={logs} year={year} month={month}/>}
+          </div>
+        )
+      }
+
+      {aModal && <AssignmentModal assignment={aModal.data} onSave={saveAssignment} onClose={()=>setAModal(null)}/>}
+      {pModal && <PracticeModal dateStr={pModal} assignments={assignments} logs={logs} onSave={saveLogs} onClose={()=>setPModal(null)}/>}
+      {delConf && <ConfirmModal msg={`"${delConf.title}" 숙제와 모든 연습 기록을 삭제할까요?`} onConfirm={()=>deleteAssignment(delConf)} onClose={()=>setDelConf(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
