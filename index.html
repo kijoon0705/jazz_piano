@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🎹 Mojo Jazz Studio - 숙제 검사 트래커</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,26 +16,48 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#f5f5f7;color:#1d1d1f;min-height:100vh}
 .app{max-width:1200px;margin:0 auto;padding:16px}
 
+/* Login */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:16px}
+.login-card{background:#fff;border-radius:24px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo{text-align:center;font-size:3rem;margin-bottom:8px}
+.login-title{text-align:center;font-size:1.15rem;font-weight:800;margin-bottom:4px}
+.login-sub{text-align:center;font-size:.8rem;color:#aaa;margin-bottom:28px}
+.login-err{background:#fff0f0;border:1px solid #ffc0c0;color:#cc0000;font-size:.82rem;padding:10px 12px;border-radius:8px;margin-bottom:12px;line-height:1.5}
+.login-info{background:#f0f5ff;border:1px solid #c0d8ff;color:#0056cc;font-size:.8rem;padding:10px 12px;border-radius:8px;margin-bottom:12px;line-height:1.5}
+
+/* Loading */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;gap:14px}
+.spinner{width:36px;height:36px;border:3px solid #f0f0f0;border-top-color:#007aff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:.85rem;color:#aaa}
+
 /* Header */
 .header{background:#fff;border-radius:16px;padding:14px 20px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.header-title{font-size:1.3rem;font-weight:800;color:#1d1d1f}
+.header-left{display:flex;align-items:center;gap:10px;min-width:0}
+.header-title{font-size:1.1rem;font-weight:800;white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;color:#007aff;font-weight:700;font-size:.9rem;cursor:pointer;padding:6px 10px;border-radius:8px;transition:background .2s}
+.back-btn:hover{background:#f0f5ff}
+.breadcrumb-sep{color:#ccc;font-size:.9rem}
+.breadcrumb-name{font-weight:700;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-name{font-size:.82rem;color:#888;font-weight:600}
+
+/* View toggle */
 .view-toggle{display:flex;gap:3px;background:#f0f0f0;padding:3px;border-radius:10px}
-.view-toggle .vbtn{padding:6px 14px;font-size:.8rem;font-weight:600;border:none;border-radius:7px;background:transparent;color:#888;cursor:pointer;transition:all .2s}
+.view-toggle .vbtn{padding:5px 12px;font-size:.78rem;font-weight:600;border:none;border-radius:7px;background:transparent;color:#888;cursor:pointer;transition:all .2s}
 .view-toggle .vbtn.active{background:#fff;color:#007aff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 
 /* Tab bar */
 .tab-bar{display:flex;gap:4px;background:#fff;padding:6px;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.tab-btn{flex:1;padding:10px;border:none;border-radius:10px;background:transparent;font-size:.85rem;font-weight:600;color:#888;cursor:pointer;transition:all .2s}
+.tab-btn{flex:1;padding:10px;border:none;border-radius:10px;background:transparent;font-size:.82rem;font-weight:600;color:#888;cursor:pointer;transition:all .2s}
 .tab-btn.active{background:#f0f5ff;color:#007aff}
 
 /* Buttons */
-.btn{padding:8px 16px;border:none;border-radius:10px;cursor:pointer;font-size:.875rem;font-weight:600;transition:all .2s}
-.btn-primary{background:#007aff;color:#fff}
-.btn-primary:hover{background:#0056cc}
-.btn-secondary{background:#f0f0f0;color:#333}
-.btn-secondary:hover{background:#e0e0e0}
-.btn-danger{background:#ff3b30;color:#fff}
-.btn-danger:hover{background:#cc0000}
+.btn{padding:8px 16px;border:none;border-radius:10px;cursor:pointer;font-size:.875rem;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:#007aff;color:#fff}.btn-primary:hover{background:#0056cc}
+.btn-secondary{background:#f0f0f0;color:#333}.btn-secondary:hover{background:#e0e0e0}
+.btn-danger{background:#ff3b30;color:#fff}.btn-danger:hover{background:#cc0000}
+.btn-ghost{background:none;color:#ff3b30;border:1.5px solid #ff3b30}.btn-ghost:hover{background:#fff0f0}
 .btn-sm{padding:5px 10px;font-size:.75rem;border-radius:7px}
 
 /* Card */
@@ -43,30 +68,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 /* Nav controls */
 .nav-controls{display:flex;align-items:center;gap:10px}
 .nav-label{font-size:1rem;font-weight:700;min-width:130px;text-align:center}
-.nav-btn{background:#f0f0f0;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background .2s;line-height:1}
+.nav-btn{background:#f0f0f0;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background .2s}
 .nav-btn:hover{background:#e0e0e0}
+
+/* Students grid */
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.student-card{background:#fff;border-radius:16px;padding:22px 16px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid transparent;text-align:center;position:relative}
+.student-card:hover{border-color:#007aff;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,122,255,.18)}
+.s-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#fff;margin:0 auto 12px}
+.s-name{font-weight:700;font-size:.95rem;margin-bottom:4px}
+.s-email{font-size:.7rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-card-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .2s}
+.student-card:hover .s-card-actions{opacity:1}
+.add-student-card{border:2px dashed #d0d0d0;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:#aaa;transition:all .2s;min-height:140px}
+.add-student-card:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
+.add-icon{font-size:2rem}
+.add-label{font-size:.85rem;font-weight:600}
 
 /* Calendar grid */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
 .day-lbl{text-align:center;font-size:.72rem;font-weight:700;color:#aaa;padding:6px 2px}
-.day-lbl.sun{color:#ff3b30}
-.day-lbl.sat{color:#007aff}
+.day-lbl.sun{color:#ff3b30}.day-lbl.sat{color:#007aff}
 
 /* Day cell */
 .day-cell{min-height:88px;border-radius:10px;padding:6px 5px;background:#fafafa;border:1.5px solid #f0f0f0;cursor:pointer;transition:background .15s;overflow:hidden}
 .day-cell:hover{background:#f0f5ff;border-color:#c0d8ff}
 .day-cell.today{border-color:#007aff;background:#f0f5ff}
 .day-cell.other-month{opacity:.35}
-.day-num{font-size:.78rem;font-weight:700;margin-bottom:3px;display:flex;align-items:center}
-.day-num.sun{color:#ff3b30}
-.day-num.sat{color:#007aff}
+.day-num{font-size:.78rem;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:3px}
+.day-num.sun{color:#ff3b30}.day-num.sat{color:#007aff}
 .today-bubble{background:#007aff;color:#fff;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem}
 .a-tag{font-size:.62rem;padding:2px 5px;border-radius:4px;color:#fff;margin-bottom:2px;display:flex;gap:3px;align-items:center;overflow:hidden}
 .a-tag.done{opacity:.65;text-decoration:line-through}
 .a-tag-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .a-tag-cnt{font-weight:800;flex-shrink:0}
 .more-lbl{font-size:.6rem;color:#aaa;text-align:center}
-/* Mobile dots (hidden on desktop) */
 .dot-row{display:none;gap:3px;flex-wrap:wrap;margin-top:2px}
 .dot{width:7px;height:7px;border-radius:50%}
 
@@ -76,14 +112,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .week-day.today{border-color:#007aff}
 .wday-hdr{text-align:center;margin-bottom:8px}
 .wday-name{font-size:.68rem;color:#aaa;font-weight:700}
-.wday-name.sun{color:#ff3b30}
-.wday-name.sat{color:#007aff}
+.wday-name.sun{color:#ff3b30}.wday-name.sat{color:#007aff}
 .wday-num{font-size:1rem;font-weight:700}
 .wday-num.today-b{background:#007aff;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:.85rem}
-.wday-num.sun-n{color:#ff3b30}
-.wday-num.sat-n{color:#007aff}
-
-/* Practice item */
+.wday-num.sun-n{color:#ff3b30}.wday-num.sat-n{color:#007aff}
 .pr-item{background:#fff;border-radius:8px;padding:7px;margin-bottom:5px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.07)}
 .pr-title{font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
 .pr-song{font-size:.65rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
@@ -120,10 +152,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .log-target{font-size:.7rem;color:#aaa}
 .cnt-ctrl{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
 .cnt-btns{display:flex;align-items:center;gap:6px}
-.cnt-btn{width:28px;height:28px;border-radius:50%;border:none;background:#007aff;color:#fff;cursor:pointer;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.cnt-btn{width:28px;height:28px;border-radius:50%;border:none;background:#007aff;color:#fff;cursor:pointer;font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center}
 .cnt-btn:hover{background:#0056cc}
 .cnt-val{font-size:1.1rem;font-weight:800;min-width:30px;text-align:center}
-.chk-btn{width:22px;height:22px;border-radius:6px;border:2px solid #ccc;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .2s;flex-shrink:0}
+.chk-btn{width:22px;height:22px;border-radius:6px;border:2px solid #ccc;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;transition:all .2s}
 .chk-btn.on{background:#34c759;border-color:#34c759;color:#fff}
 
 /* Assignment card */
@@ -153,11 +185,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .empty-icon{font-size:2.5rem;margin-bottom:10px}
 .empty-txt{font-size:.88rem}
 
+/* Config warning */
+.config-warn{background:#fff8e1;border:2px solid #ffc107;border-radius:12px;padding:20px;margin-bottom:16px;font-size:.85rem;line-height:1.8}
+.config-warn code{background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:.8rem}
+
 /* Responsive */
 @media(max-width:768px){
   .app{padding:8px}
   .header{padding:10px 14px}
-  .header-title{font-size:1.05rem}
+  .header-title{font-size:.95rem}
   .cal-grid{gap:2px}
   .day-cell{min-height:56px;padding:4px 3px}
   .day-num{font-size:.7rem}
@@ -166,14 +202,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
   .dot-row{display:flex}
   .week-grid{gap:3px}
   .week-day{padding:5px 3px;min-height:110px}
-  .pr-item{padding:5px}
-  .pr-title{font-size:.68rem}
   .modal{padding:16px;border-radius:16px}
   .frow{grid-template-columns:1fr}
   .nav-label{min-width:100px;font-size:.85rem}
   .btn{padding:6px 12px;font-size:.78rem}
-  .stat-num{font-size:1.5rem}
-  .log-name{font-size:.82rem}
+  .students-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .s-card-actions{opacity:1}
 }
 @media(max-width:480px){
   .wday-name{font-size:.58rem}
@@ -188,36 +222,138 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 <script type="text/babel">
 const {useState, useEffect, useRef} = React;
 
+/* ════════════════════════════════════════════════════════════
+   🔥 FIREBASE 설정
+   Firebase Console → 프로젝트 설정 → 웹앱 → SDK 설정에서 복사
+   ════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCEwkfkEuFHgexwnZjyCJDoMgkfkddGzRo",
+  authDomain: "mojojazzpiano.firebaseapp.com",
+  projectId: "mojojazzpiano",
+  storageBucket: "mojojazzpiano.firebasestorage.app",
+  messagingSenderId: "692823136708",
+  appId: "1:692823136708:web:c9f7a2a119691014c2ec91"
+};
+
+// 선생님 이메일 주소 (이 이메일로 가입하면 선생님 권한)
+const TEACHER_EMAIL = "kijoon0705@naver.com";
+/* ════════════════════════════════════════════════════════════ */
+
+const isConfigured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY" && TEACHER_EMAIL !== "YOUR_TEACHER_EMAIL@example.com";
+
+let auth, db;
+if (isConfigured) {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  auth = firebase.auth();
+  db = firebase.firestore();
+}
+
+// ── Constants ──
 const COLORS = ['#007aff','#ff3b30','#34c759','#ff9500','#af52de','#ff2d55','#5ac8fa','#ffcc00'];
 const DAYS = ['일','월','화','수','목','금','토'];
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
-const toStr = d => {
-  const dt = new Date(d);
-  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-};
+// ── Utils ──
+const toStr = d => { const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
 const todayStr = () => toStr(new Date());
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
+const isActive = (a, ds) => ds >= a.startDate && ds <= a.endDate;
+const getLog = (logs, aid, ds) => logs.find(l => l.assignmentId===aid && l.date===ds);
+const avatarColor = name => COLORS[(name||'?').charCodeAt(0) % COLORS.length];
+const avatarInitial = name => (name||'?')[0].toUpperCase();
+const weekStart = date => { const d=new Date(date); d.setDate(d.getDate()-d.getDay()); return d; };
 
-function useLS(key, init) {
-  const [v, setV] = useState(() => { try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; } });
-  useEffect(() => { localStorage.setItem(key, JSON.stringify(v)); }, [key, v]);
-  return [v, setV];
+const errMsg = code => ({
+  'auth/user-not-found': '등록된 계정이 없습니다.',
+  'auth/wrong-password': '비밀번호가 틀렸습니다.',
+  'auth/invalid-credential': '이메일 또는 비밀번호가 잘못되었습니다.',
+  'auth/email-already-in-use': '이미 사용 중인 이메일입니다.',
+  'auth/weak-password': '비밀번호는 6자 이상이어야 합니다.',
+  'auth/invalid-email': '이메일 형식이 올바르지 않습니다.',
+}[code] || '오류가 발생했습니다: ' + code);
+
+// ── Firestore helpers ──
+async function fsCreateStudent(name, email, password) {
+  let secondary;
+  try { secondary = firebase.app('secondary'); }
+  catch(e) { secondary = firebase.initializeApp(FIREBASE_CONFIG, 'secondary'); }
+  const {user} = await secondary.auth().createUserWithEmailAndPassword(email, password);
+  await db.collection('users').doc(user.uid).set({
+    name, email, role: 'student',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  await secondary.auth().signOut();
 }
 
-function isActive(a, dateStr) { return dateStr >= a.startDate && dateStr <= a.endDate; }
-function getLog(logs, aid, dateStr) { return logs.find(l => l.assignmentId === aid && l.date === dateStr); }
-
-function weekStart(date) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
+async function fsSaveAssignment(data, studentId) {
+  const {id, ...payload} = data;
+  payload.studentId = studentId;
+  if (id) { await db.collection('assignments').doc(id).update(payload); }
+  else { await db.collection('assignments').add({...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp()}); }
 }
 
-/* ── Modal wrapper ── */
+async function fsDeleteAssignment(id) {
+  await db.collection('assignments').doc(id).delete();
+  const snap = await db.collection('practiceLogs').where('assignmentId','==',id).get();
+  if (!snap.empty) { const b=db.batch(); snap.docs.forEach(d=>b.delete(d.ref)); await b.commit(); }
+}
+
+async function fsSaveLogs(logsToSave) {
+  const b = db.batch();
+  for (const lg of logsToSave) {
+    const snap = await db.collection('practiceLogs')
+      .where('studentId','==',lg.studentId)
+      .where('assignmentId','==',lg.assignmentId)
+      .where('date','==',lg.date).get();
+    if (!snap.empty) { b.update(snap.docs[0].ref, lg); }
+    else { b.set(db.collection('practiceLogs').doc(), {...lg, createdAt: firebase.firestore.FieldValue.serverTimestamp()}); }
+  }
+  await b.commit();
+}
+
+async function fsDeleteStudent(uid) {
+  await db.collection('users').doc(uid).delete();
+  const aSnap = await db.collection('assignments').where('studentId','==',uid).get();
+  const lSnap = await db.collection('practiceLogs').where('studentId','==',uid).get();
+  const b = db.batch();
+  aSnap.docs.forEach(d=>b.delete(d.ref));
+  lSnap.docs.forEach(d=>b.delete(d.ref));
+  await b.commit();
+}
+
+// ── Hooks ──
+function useStudentData(studentId) {
+  const [assignments, setAssignments] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    if (!studentId) { setLoading(false); return; }
+    setLoading(true);
+    const unsubA = db.collection('assignments').where('studentId','==',studentId)
+      .onSnapshot(s => { setAssignments(s.docs.map(d=>({id:d.id,...d.data()}))); setLoading(false); },
+        () => setLoading(false));
+    const unsubL = db.collection('practiceLogs').where('studentId','==',studentId)
+      .onSnapshot(s => setLogs(s.docs.map(d=>({id:d.id,...d.data()}))));
+    return () => { unsubA(); unsubL(); };
+  }, [studentId]);
+  return {assignments, logs, loading};
+}
+
+function useStudents() {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const unsub = db.collection('users').where('role','==','student')
+      .onSnapshot(s => { setStudents(s.docs.map(d=>({id:d.id,...d.data()}))); setLoading(false); });
+    return unsub;
+  }, []);
+  return {students, loading};
+}
+
+// ── Modal wrapper ──
 function Modal({title, onClose, children, footer}) {
   return (
-    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
       <div className="modal">
         <div className="modal-hdr">
           <span className="modal-title">{title}</span>
@@ -230,72 +366,202 @@ function Modal({title, onClose, children, footer}) {
   );
 }
 
-/* ── Assignment form modal ── */
+// ── Login Screen ──
+function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [mode, setMode] = useState('login'); // login | teacher-signup
+
+  const handleLogin = async e => {
+    e.preventDefault(); setErr(''); setLoading(true);
+    try {
+      await auth.signInWithEmailAndPassword(email, pw);
+    } catch(ex) {
+      if ((ex.code==='auth/user-not-found'||ex.code==='auth/invalid-credential') && email===TEACHER_EMAIL) {
+        setMode('teacher-signup');
+      } else {
+        setErr(errMsg(ex.code));
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleTeacherSignup = async e => {
+    e.preventDefault(); setErr(''); setLoading(true);
+    try {
+      const {user} = await auth.createUserWithEmailAndPassword(email, pw);
+      await db.collection('users').doc(user.uid).set({
+        name:'선생님', email, role:'teacher',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(ex) { setErr(errMsg(ex.code)); }
+    setLoading(false);
+  };
+
+  return (
+    <div className="login-wrap">
+      <div className="login-card">
+        <div className="login-logo">🎹</div>
+        <div className="login-title">Mojo Jazz Studio</div>
+        <div className="login-sub">숙제 검사 트래커</div>
+
+        {mode==='teacher-signup' && (
+          <div className="login-info">
+            선생님 계정({email})이 없습니다.<br/>비밀번호를 입력해 계정을 만드세요.
+          </div>
+        )}
+        {err && <div className="login-err">{err}</div>}
+
+        <form onSubmit={mode==='login' ? handleLogin : handleTeacherSignup}>
+          <div className="fg">
+            <label className="flabel">이메일</label>
+            <input className="finput" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@example.com" required autoFocus/>
+          </div>
+          <div className="fg">
+            <label className="flabel">비밀번호</label>
+            <input className="finput" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••" required/>
+          </div>
+          <button className="btn btn-primary" type="submit" disabled={loading} style={{width:'100%',justifyContent:'center',padding:'12px'}}>
+            {loading ? '처리 중…' : mode==='login' ? '로그인' : '선생님 계정 만들기'}
+          </button>
+          {mode==='teacher-signup' && (
+            <button type="button" className="btn btn-secondary" style={{width:'100%',justifyContent:'center',marginTop:8}} onClick={()=>setMode('login')}>← 뒤로</button>
+          )}
+        </form>
+        {mode==='login' && (
+          <div style={{textAlign:'center',marginTop:16,fontSize:'.75rem',color:'#bbb'}}>
+            학생은 선생님에게 계정을 받아 로그인하세요
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Add Student Modal ──
+function AddStudentModal({onClose}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const valid = name && email && pw.length >= 6;
+
+  const handle = async () => {
+    setErr(''); setLoading(true);
+    try { await fsCreateStudent(name, email, pw); onClose(); }
+    catch(ex) { setErr(errMsg(ex.code)); }
+    setLoading(false);
+  };
+
+  return (
+    <Modal title="학생 추가" onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-primary" disabled={!valid||loading} onClick={handle}>
+          {loading?'생성 중…':'계정 생성'}
+        </button></>}>
+      {err && <div className="login-err" style={{marginBottom:12}}>{err}</div>}
+      <div className="fg"><label className="flabel">이름 *</label>
+        <input className="finput" value={name} onChange={e=>setName(e.target.value)} placeholder="홍길동"/></div>
+      <div className="fg"><label className="flabel">이메일 *</label>
+        <input className="finput" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="student@example.com"/></div>
+      <div className="fg"><label className="flabel">비밀번호 * (6자 이상)</label>
+        <input className="finput" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="학생이 사용할 비밀번호"/></div>
+    </Modal>
+  );
+}
+
+// ── Edit Student Modal ──
+function EditStudentModal({student, onClose}) {
+  const [name, setName] = useState(student.name);
+  const [loading, setLoading] = useState(false);
+  const handle = async () => {
+    setLoading(true);
+    await db.collection('users').doc(student.id).update({name});
+    setLoading(false); onClose();
+  };
+  return (
+    <Modal title="학생 정보 수정" onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-primary" disabled={!name||loading} onClick={handle}>저장</button></>}>
+      <div className="fg"><label className="flabel">이름</label>
+        <input className="finput" value={name} onChange={e=>setName(e.target.value)}/></div>
+    </Modal>
+  );
+}
+
+// ── Confirm Modal ──
+function ConfirmModal({msg, onConfirm, onClose}) {
+  return (
+    <Modal title="확인" onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-danger" onClick={onConfirm}>삭제</button></>}>
+      <p style={{color:'#555',lineHeight:1.6}}>{msg}</p>
+    </Modal>
+  );
+}
+
+// ── Assignment Form Modal ──
 function AssignmentModal({assignment, onSave, onClose}) {
   const [f, setF] = useState(assignment || {
     title:'', song:'', startDate:todayStr(), endDate:'', dailyTarget:3, color:COLORS[0], notes:''
   });
   const set = (k,v) => setF(p=>({...p,[k]:v}));
-  const valid = f.title && f.song && f.startDate && f.endDate && f.dailyTarget > 0 && f.endDate >= f.startDate;
+  const valid = f.title&&f.song&&f.startDate&&f.endDate&&f.dailyTarget>0&&f.endDate>=f.startDate;
   return (
-    <Modal title={assignment ? '숙제 수정' : '숙제 추가'} onClose={onClose}
+    <Modal title={assignment?'숙제 수정':'숙제 추가'} onClose={onClose}
       footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
         <button className="btn btn-primary" disabled={!valid} onClick={()=>onSave(f)}>저장</button></>}>
-      <div className="fg">
-        <label className="flabel">숙제 이름 *</label>
-        <input className="finput" value={f.title} onChange={e=>set('title',e.target.value)} placeholder="예: 바이엘 30번"/>
-      </div>
-      <div className="fg">
-        <label className="flabel">곡 *</label>
-        <input className="finput" value={f.song} onChange={e=>set('song',e.target.value)} placeholder="예: Für Elise"/>
-      </div>
+      <div className="fg"><label className="flabel">숙제 이름 *</label>
+        <input className="finput" value={f.title} onChange={e=>set('title',e.target.value)} placeholder="예: 바이엘 30번"/></div>
+      <div className="fg"><label className="flabel">곡 *</label>
+        <input className="finput" value={f.song} onChange={e=>set('song',e.target.value)} placeholder="예: Für Elise"/></div>
       <div className="frow">
-        <div className="fg">
-          <label className="flabel">시작일 *</label>
-          <input className="finput" type="date" value={f.startDate} onChange={e=>set('startDate',e.target.value)}/>
-        </div>
-        <div className="fg">
-          <label className="flabel">종료일 *</label>
-          <input className="finput" type="date" value={f.endDate} min={f.startDate} onChange={e=>set('endDate',e.target.value)}/>
-        </div>
+        <div className="fg"><label className="flabel">시작일 *</label>
+          <input className="finput" type="date" value={f.startDate} onChange={e=>set('startDate',e.target.value)}/></div>
+        <div className="fg"><label className="flabel">종료일 *</label>
+          <input className="finput" type="date" value={f.endDate} min={f.startDate} onChange={e=>set('endDate',e.target.value)}/></div>
       </div>
-      <div className="fg">
-        <label className="flabel">일일 목표 횟수 *</label>
-        <input className="finput" type="number" min="1" max="99" value={f.dailyTarget} onChange={e=>set('dailyTarget',Number(e.target.value))}/>
-      </div>
-      <div className="fg">
-        <label className="flabel">색상</label>
+      <div className="fg"><label className="flabel">일일 목표 횟수 *</label>
+        <input className="finput" type="number" min="1" max="99" value={f.dailyTarget} onChange={e=>set('dailyTarget',Number(e.target.value))}/></div>
+      <div className="fg"><label className="flabel">색상</label>
         <div className="color-row">{COLORS.map(c=>(
           <div key={c} className={`cdot${f.color===c?' sel':''}`} style={{background:c}} onClick={()=>set('color',c)}/>
-        ))}</div>
-      </div>
-      <div className="fg">
-        <label className="flabel">메모</label>
-        <input className="finput" value={f.notes} onChange={e=>set('notes',e.target.value)} placeholder="선택사항"/>
-      </div>
+        ))}</div></div>
+      <div className="fg"><label className="flabel">메모</label>
+        <input className="finput" value={f.notes} onChange={e=>set('notes',e.target.value)} placeholder="선택사항"/></div>
     </Modal>
   );
 }
 
-/* ── Practice log modal ── */
-function PracticeModal({dateStr, assignments, logs, onSave, onClose}) {
-  const active = assignments.filter(a => isActive(a, dateStr));
+// ── Practice Log Modal ──
+function PracticeModal({dateStr, assignments, logs, studentId, onClose}) {
+  const active = assignments.filter(a=>isActive(a,dateStr));
   const [ls, setLs] = useState(() => active.map(a => {
-    const ex = getLog(logs, a.id, dateStr);
-    return {assignmentId:a.id, date:dateStr, count:ex?.count??0, completed:ex?.completed??false};
+    const ex=getLog(logs,a.id,dateStr);
+    return {assignmentId:a.id, date:dateStr, studentId, count:ex?.count??0, completed:ex?.completed??false};
   }));
+  const [saving, setSaving] = useState(false);
   const upd = (i,k,v) => setLs(p=>p.map((x,j)=>j===i?{...x,[k]:v}:x));
   const dt = new Date(dateStr+'T00:00:00');
   const lbl = `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})`;
+
+  const save = async () => {
+    setSaving(true);
+    await fsSaveLogs(ls);
+    setSaving(false); onClose();
+  };
+
   return (
     <Modal title={`연습 기록 — ${lbl}`} onClose={onClose}
       footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
-        <button className="btn btn-primary" onClick={()=>onSave(ls)}>저장</button></>}>
-      {active.length === 0
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving?'저장 중…':'저장'}</button></>}>
+      {active.length===0
         ? <div className="empty"><div className="empty-icon">📭</div><div className="empty-txt">이 날 할당된 숙제가 없습니다</div></div>
         : active.map((a,i)=>{
-          const l = ls[i];
-          const pct = Math.min(100, Math.round((l.count/a.dailyTarget)*100));
+          const l=ls[i], pct=Math.min(100,Math.round((l.count/a.dailyTarget)*100));
           return (
             <div key={a.id} className="log-entry" style={{borderLeftColor:a.color}}>
               <div className="log-info">
@@ -311,80 +577,43 @@ function PracticeModal({dateStr, assignments, logs, onSave, onClose}) {
                   <button className="cnt-btn" onClick={()=>upd(i,'count',l.count+1)}>+</button>
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:5}}>
-                  <button className={`chk-btn${l.completed?' on':''}`} onClick={()=>upd(i,'completed',!l.completed)} title="완료">
-                    {l.completed?'✓':''}
-                  </button>
+                  <button className={`chk-btn${l.completed?' on':''}`} onClick={()=>upd(i,'completed',!l.completed)}>{l.completed?'✓':''}</button>
                   <span style={{fontSize:'.65rem',color:'#aaa'}}>완료</span>
                 </div>
               </div>
             </div>
           );
-        })
-      }
+        })}
     </Modal>
   );
 }
 
-/* ── Delete confirm ── */
-function ConfirmModal({msg, onConfirm, onClose}) {
-  return (
-    <Modal title="삭제 확인" onClose={onClose}
-      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
-        <button className="btn btn-danger" onClick={onConfirm}>삭제</button></>}>
-      <p style={{color:'#555',lineHeight:1.6}}>{msg}</p>
-    </Modal>
-  );
-}
-
-/* ── Monthly Calendar ── */
+// ── Monthly Calendar ──
 function MonthCal({year, month, assignments, logs, onDay}) {
-  const ts = todayStr();
-  const first = new Date(year, month, 1).getDay();
-  const dim = new Date(year, month+1, 0).getDate();
-  const dipm = new Date(year, month, 0).getDate();
-  const cells = [];
-  for (let i=first-1;i>=0;i--) {
-    const d=dipm-i, m2=month===0?12:month, y2=month===0?year-1:year;
-    cells.push({day:d, ds:`${y2}-${String(m2).padStart(2,'0')}-${String(d).padStart(2,'0')}`, cur:false});
-  }
-  for (let d=1;d<=dim;d++) {
-    cells.push({day:d, ds:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, cur:true});
-  }
-  const rem = 42-cells.length;
-  for (let d=1;d<=rem;d++) {
-    const nm=month+2>12?1:month+2, ny=month+2>12?year+1:year;
-    cells.push({day:d, ds:`${ny}-${String(nm).padStart(2,'0')}-${String(d).padStart(2,'0')}`, cur:false});
-  }
+  const ts=todayStr(), first=new Date(year,month,1).getDay(), dim=new Date(year,month+1,0).getDate(), dipm=new Date(year,month,0).getDate();
+  const cells=[];
+  for(let i=first-1;i>=0;i--){const d=dipm-i,m2=month===0?12:month,y2=month===0?year-1:year;cells.push({day:d,ds:`${y2}-${String(m2).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:false});}
+  for(let d=1;d<=dim;d++)cells.push({day:d,ds:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:true});
+  const rem=42-cells.length;
+  for(let d=1;d<=rem;d++){const nm=month+2>12?1:month+2,ny=month+2>12?year+1:year;cells.push({day:d,ds:`${ny}-${String(nm).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:false});}
   return (
     <div className="cal-grid">
       {DAYS.map((d,i)=><div key={d} className={`day-lbl${i===0?' sun':i===6?' sat':''}`}>{d}</div>)}
       {cells.map((c,idx)=>{
-        const dow=idx%7, isT=c.ds===ts;
-        const active=assignments.filter(a=>isActive(a,c.ds));
+        const dow=idx%7,isT=c.ds===ts,active=assignments.filter(a=>isActive(a,c.ds));
         const doneCount=active.filter(a=>getLog(logs,a.id,c.ds)?.completed).length;
         return (
           <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`} onClick={()=>onDay(c.ds)}>
             <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>
-              {isT ? <span className="today-bubble">{c.day}</span> : c.day}
-              {doneCount>0 && active.length>0 && <span style={{fontSize:'.55rem',color:'#34c759',marginLeft:3,fontWeight:800}}>✓{doneCount}</span>}
+              {isT?<span className="today-bubble">{c.day}</span>:c.day}
+              {doneCount>0&&active.length>0&&<span style={{fontSize:'.55rem',color:'#34c759',fontWeight:800}}>✓{doneCount}</span>}
             </div>
             {active.slice(0,3).map(a=>{
-              const lg=getLog(logs,a.id,c.ds);
-              const cnt=lg?.count??0;
-              return (
-                <div key={a.id} className={`a-tag${lg?.completed?' done':''}`} style={{background:a.color}}>
-                  <span className="a-tag-name">{a.title}</span>
-                  <span className="a-tag-cnt">{cnt}/{a.dailyTarget}</span>
-                </div>
-              );
+              const lg=getLog(logs,a.id,c.ds),cnt=lg?.count??0;
+              return <div key={a.id} className={`a-tag${lg?.completed?' done':''}`} style={{background:a.color}}><span className="a-tag-name">{a.title}</span><span className="a-tag-cnt">{cnt}/{a.dailyTarget}</span></div>;
             })}
-            {active.length>3 && <div className="more-lbl">+{active.length-3}</div>}
-            <div className="dot-row">
-              {active.slice(0,5).map(a=>{
-                const lg=getLog(logs,a.id,c.ds);
-                return <div key={a.id} className="dot" style={{background:lg?.completed?a.color:'#e0e0e0',border:`1.5px solid ${a.color}`}}/>;
-              })}
-            </div>
+            {active.length>3&&<div className="more-lbl">+{active.length-3}</div>}
+            <div className="dot-row">{active.slice(0,5).map(a=>{const lg=getLog(logs,a.id,c.ds);return <div key={a.id} className="dot" style={{background:lg?.completed?a.color:'#e0e0e0',border:`1.5px solid ${a.color}`}}/>;})}</div>
           </div>
         );
       })}
@@ -392,28 +621,23 @@ function MonthCal({year, month, assignments, logs, onDay}) {
   );
 }
 
-/* ── Weekly Calendar ── */
+// ── Weekly Calendar ──
 function WeekCal({wStart, assignments, logs, onDay}) {
-  const ts = todayStr();
-  const days = Array.from({length:7},(_,i)=>{
-    const d=new Date(wStart); d.setDate(d.getDate()+i); return {date:d, ds:toStr(d)};
-  });
+  const ts=todayStr();
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(wStart);d.setDate(d.getDate()+i);return{date:d,ds:toStr(d)};});
   return (
     <div className="week-grid">
       {days.map(({date,ds},i)=>{
-        const isT=ds===ts, dow=date.getDay();
-        const active=assignments.filter(a=>isActive(a,ds));
+        const isT=ds===ts,dow=date.getDay(),active=assignments.filter(a=>isActive(a,ds));
         return (
           <div key={ds} className={`week-day${isT?' today':''}`} onClick={()=>onDay(ds)}>
             <div className="wday-hdr">
               <div className={`wday-name${dow===0?' sun':dow===6?' sat':''}`}>{DAYS[dow]}</div>
               <div className={`wday-num${isT?' today-b':dow===0?' sun-n':dow===6?' sat-n':''}`}>{date.getDate()}</div>
             </div>
-            {active.length===0 && <div className="wday-empty">—</div>}
+            {active.length===0&&<div className="wday-empty">—</div>}
             {active.map(a=>{
-              const lg=getLog(logs,a.id,ds);
-              const cnt=lg?.count??0;
-              const pct=Math.min(100,Math.round((cnt/a.dailyTarget)*100));
+              const lg=getLog(logs,a.id,ds),cnt=lg?.count??0,pct=Math.min(100,Math.round((cnt/a.dailyTarget)*100));
               return (
                 <div key={a.id} className="pr-item" style={{borderLeftColor:a.color}}>
                   <div className="pr-title">{a.title}</div>
@@ -422,7 +646,7 @@ function WeekCal({wStart, assignments, logs, onDay}) {
                     <div className="pbar-wrap"><div className="pbar" style={{width:`${pct}%`,background:a.color}}/></div>
                     <span className="pr-cnt">{cnt}/{a.dailyTarget}</span>
                   </div>
-                  {lg?.completed && <div style={{fontSize:'.62rem',color:'#34c759',fontWeight:700,marginTop:2}}>✓ 완료</div>}
+                  {lg?.completed&&<div style={{fontSize:'.62rem',color:'#34c759',fontWeight:700,marginTop:2}}>✓ 완료</div>}
                 </div>
               );
             })}
@@ -433,73 +657,35 @@ function WeekCal({wStart, assignments, logs, onDay}) {
   );
 }
 
-/* ── Stats View ── */
+// ── Stats View ──
 function StatsView({assignments, logs, year, month}) {
-  const refs = useRef({});
-  const charts = useRef({});
-  const ms = `${year}-${String(month+1).padStart(2,'0')}`;
-  const mLogs = logs.filter(l=>l.date.startsWith(ms));
-  const totalCount = mLogs.reduce((s,l)=>s+(l.count||0),0);
-  const totalDone = mLogs.filter(l=>l.completed).length;
-
-  const dim = new Date(year,month+1,0).getDate();
-  const stats = assignments.map(a=>{
+  const refs=useRef({}), charts=useRef({});
+  const ms=`${year}-${String(month+1).padStart(2,'0')}`;
+  const mLogs=logs.filter(l=>l.date.startsWith(ms));
+  const totalCount=mLogs.reduce((s,l)=>s+(l.count||0),0);
+  const totalDone=mLogs.filter(l=>l.completed).length;
+  const dim=new Date(year,month+1,0).getDate();
+  const stats=assignments.map(a=>{
     let active=0,tgt=0,actual=0,done=0;
-    for (let d=1;d<=dim;d++) {
-      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      if (isActive(a,ds)) {
-        active++; tgt+=a.dailyTarget;
-        const lg=getLog(logs,a.id,ds);
-        if (lg) { actual+=lg.count||0; if(lg.completed) done++; }
-      }
-    }
-    return {...a, active, tgt, actual, done, rate:tgt>0?Math.round((actual/tgt)*100):0};
+    for(let d=1;d<=dim;d++){const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(isActive(a,ds)){active++;tgt+=a.dailyTarget;const lg=getLog(logs,a.id,ds);if(lg){actual+=lg.count||0;if(lg.completed)done++;}}}
+    return {...a,active,tgt,actual,done,rate:tgt>0?Math.round((actual/tgt)*100):0};
   }).filter(a=>a.active>0);
-
-  const avgRate = stats.length>0 ? Math.round(stats.reduce((s,a)=>s+a.rate,0)/stats.length) : 0;
+  const avgRate=stats.length>0?Math.round(stats.reduce((s,a)=>s+a.rate,0)/stats.length):0;
 
   useEffect(()=>{
-    const build = (key, type, data, opts) => {
-      if (charts.current[key]) charts.current[key].destroy();
-      const c = refs.current[key];
-      if (!c) return;
-      charts.current[key] = new Chart(c, {type, data, options:{responsive:true,maintainAspectRatio:false,...opts}});
-    };
-
-    if (stats.length>0) {
-      build('bar','bar',{
-        labels:stats.map(a=>a.title),
-        datasets:[{label:'달성률(%)',data:stats.map(a=>a.rate),
-          backgroundColor:stats.map(a=>a.color+'bb'),borderColor:stats.map(a=>a.color),
-          borderWidth:2,borderRadius:6}]
-      },{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}});
-
-      build('doughnut','doughnut',{
-        labels:stats.map(a=>a.title),
-        datasets:[{data:stats.map(a=>a.actual),backgroundColor:stats.map(a=>a.color+'bb'),borderColor:stats.map(a=>a.color),borderWidth:2}]
-      },{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}});
+    const build=(key,type,data,opts)=>{if(charts.current[key])charts.current[key].destroy();const c=refs.current[key];if(!c)return;charts.current[key]=new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});};
+    if(stats.length>0){
+      build('bar','bar',{labels:stats.map(a=>a.title),datasets:[{label:'달성률(%)',data:stats.map(a=>a.rate),backgroundColor:stats.map(a=>a.color+'bb'),borderColor:stats.map(a=>a.color),borderWidth:2,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}});
+      build('doughnut','doughnut',{labels:stats.map(a=>a.title),datasets:[{data:stats.map(a=>a.actual),backgroundColor:stats.map(a=>a.color+'bb'),borderColor:stats.map(a=>a.color),borderWidth:2}]},{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}});
     }
-
-    const dailyCounts = Array.from({length:dim},(_,i)=>{
-      const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
-      return mLogs.filter(l=>l.date===ds).reduce((s,l)=>s+(l.count||0),0);
-    });
-    build('line','line',{
-      labels:Array.from({length:dim},(_,i)=>`${i+1}`),
-      datasets:[{label:'연습 횟수',data:dailyCounts,borderColor:'#007aff',backgroundColor:'#007aff22',fill:true,tension:.3,pointRadius:3,pointHoverRadius:5}]
-    },{plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{stepSize:1},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{maxTicksLimit:15}}}});
-
-    return ()=>{ Object.values(charts.current).forEach(c=>c&&c.destroy()); charts.current={}; };
+    const dailyCounts=Array.from({length:dim},(_,i)=>{const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;return mLogs.filter(l=>l.date===ds).reduce((s,l)=>s+(l.count||0),0);});
+    build('line','line',{labels:Array.from({length:dim},(_,i)=>`${i+1}`),datasets:[{label:'연습 횟수',data:dailyCounts,borderColor:'#007aff',backgroundColor:'#007aff22',fill:true,tension:.3,pointRadius:3}]},{plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{stepSize:1},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{maxTicksLimit:15}}}});
+    return()=>{Object.values(charts.current).forEach(c=>c&&c.destroy());charts.current={};};
   },[year,month,JSON.stringify(mLogs),stats.length]);
 
-  if (stats.length===0 && totalCount===0) return (
-    <div style={{marginTop:16}}>
-      <div className="empty"><div className="empty-icon">📊</div><div className="empty-txt">이번 달 연습 데이터가 없습니다</div></div>
-    </div>
-  );
-
+  if(stats.length===0&&totalCount===0)return <div className="empty"><div className="empty-icon">📊</div><div className="empty-txt">이번 달 데이터가 없습니다</div></div>;
   return (
-    <div style={{marginTop:16}}>
+    <div>
       <div className="stat-cards">
         <div className="stat-card"><div className="stat-num">{totalCount}</div><div className="stat-lbl">총 연습 횟수</div></div>
         <div className="stat-card"><div className="stat-num">{totalDone}</div><div className="stat-lbl">완료 체크</div></div>
@@ -507,53 +693,40 @@ function StatsView({assignments, logs, year, month}) {
         <div className="stat-card"><div className="stat-num" style={{color:avgRate>=80?'#34c759':avgRate>=50?'#ff9500':'#ff3b30'}}>{avgRate}%</div><div className="stat-lbl">평균 달성률</div></div>
       </div>
       <div className="charts-grid">
-        {stats.length>0 && <>
-          <div className="chart-card">
-            <div className="chart-ttl">숙제별 달성률</div>
-            <div style={{height:200}}><canvas ref={el=>refs.current['bar']=el}/></div>
-          </div>
-          <div className="chart-card">
-            <div className="chart-ttl">숙제별 연습 비중</div>
-            <div style={{height:200}}><canvas ref={el=>refs.current['doughnut']=el}/></div>
-          </div>
-        </>}
-        <div className="chart-card full">
-          <div className="chart-ttl">일별 연습 횟수</div>
-          <div style={{height:160}}><canvas ref={el=>refs.current['line']=el}/></div>
-        </div>
+        {stats.length>0&&<><div className="chart-card"><div className="chart-ttl">숙제별 달성률</div><div style={{height:200}}><canvas ref={el=>refs.current['bar']=el}/></div></div>
+        <div className="chart-card"><div className="chart-ttl">숙제별 연습 비중</div><div style={{height:200}}><canvas ref={el=>refs.current['doughnut']=el}/></div></div></>}
+        <div className="chart-card full"><div className="chart-ttl">일별 연습 횟수</div><div style={{height:160}}><canvas ref={el=>refs.current['line']=el}/></div></div>
       </div>
-      {stats.length>0 && (
-        <div style={{marginTop:16}}>
-          <div style={{fontWeight:700,fontSize:'.9rem',marginBottom:10,color:'#555'}}>숙제별 상세</div>
-          {stats.map(a=>(
-            <div key={a.id} className="a-detail-row">
-              <div style={{width:12,height:12,borderRadius:'50%',background:a.color,flexShrink:0}}/>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:700,fontSize:'.85rem'}}>{a.title} <span style={{fontWeight:400,color:'#aaa'}}>— {a.song}</span></div>
-                <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${a.rate}%`,background:a.color}}/></div>
-              </div>
-              <div style={{textAlign:'right',flexShrink:0}}>
-                <div style={{fontWeight:800,color:a.color,fontSize:'1rem'}}>{a.rate}%</div>
-                <div style={{fontSize:'.7rem',color:'#aaa'}}>{a.actual}/{a.tgt}회</div>
-              </div>
+      {stats.length>0&&<div style={{marginTop:16}}>
+        <div style={{fontWeight:700,fontSize:'.9rem',marginBottom:10,color:'#555'}}>숙제별 상세</div>
+        {stats.map(a=>(
+          <div key={a.id} className="a-detail-row">
+            <div style={{width:12,height:12,borderRadius:'50%',background:a.color,flexShrink:0}}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:'.85rem'}}>{a.title} <span style={{fontWeight:400,color:'#aaa'}}>— {a.song}</span></div>
+              <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${a.rate}%`,background:a.color}}/></div>
             </div>
-          ))}
-        </div>
-      )}
+            <div style={{textAlign:'right',flexShrink:0}}>
+              <div style={{fontWeight:800,color:a.color}}>{a.rate}%</div>
+              <div style={{fontSize:'.7rem',color:'#aaa'}}>{a.actual}/{a.tgt}회</div>
+            </div>
+          </div>
+        ))}
+      </div>}
     </div>
   );
 }
 
-/* ── Assignments Panel ── */
-function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
+// ── Assignments Panel ──
+function AssignmentsPanel({assignments, isTeacher, onAdd, onEdit, onDel}) {
   return (
-    <div className="card" style={{marginTop:0}}>
-      <div className="card-header">
-        <span className="card-title">📝 숙제 관리</span>
-        <button className="btn btn-primary btn-sm" onClick={onAdd}>+ 숙제 추가</button>
+    <div>
+      <div className="card-header" style={{marginBottom:12}}>
+        <span className="card-title">📝 숙제 목록</span>
+        {isTeacher&&<button className="btn btn-primary btn-sm" onClick={onAdd}>+ 숙제 추가</button>}
       </div>
       {assignments.length===0
-        ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">등록된 숙제가 없습니다<br/>숙제를 추가해 보세요!</div></div>
+        ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">{isTeacher?'숙제를 추가해 보세요!':'등록된 숙제가 없습니다'}</div></div>
         : assignments.map(a=>(
           <div key={a.id} className="a-card" style={{borderLeftColor:a.color}}>
             <div className="a-card-top">
@@ -563,13 +736,13 @@ function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
                 <div className="a-meta">
                   <span>📅 {a.startDate} ~ {a.endDate}</span>
                   <span>🎯 하루 {a.dailyTarget}회</span>
-                  {a.notes && <span>💬 {a.notes}</span>}
+                  {a.notes&&<span>💬 {a.notes}</span>}
                 </div>
               </div>
-              <div className="a-actions">
+              {isTeacher&&<div className="a-actions">
                 <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(a)}>수정</button>
                 <button className="btn btn-danger btn-sm" onClick={()=>onDel(a)}>삭제</button>
-              </div>
+              </div>}
             </div>
           </div>
         ))
@@ -578,10 +751,9 @@ function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
   );
 }
 
-/* ── App ── */
-function App() {
-  const [assignments, setAssignments] = useLS('piano_assignments', []);
-  const [logs, setLogs] = useLS('piano_logs', []);
+// ── Student View (shared between teacher-on-student and student-self) ──
+function StudentView({studentId, isTeacher}) {
+  const {assignments, logs, loading} = useStudentData(studentId);
   const [view, setView] = useState('monthly');
   const [tab, setTab] = useState('calendar');
   const [cur, setCur] = useState(new Date());
@@ -589,91 +761,200 @@ function App() {
   const [pModal, setPModal] = useState(null);
   const [delConf, setDelConf] = useState(null);
 
-  const year = cur.getFullYear(), month = cur.getMonth();
-  const ws = weekStart(cur);
+  const year=cur.getFullYear(), month=cur.getMonth(), ws=weekStart(cur);
+  const prev=()=>{const d=new Date(cur);view==='monthly'?d.setMonth(d.getMonth()-1):d.setDate(d.getDate()-7);setCur(d);};
+  const next=()=>{const d=new Date(cur);view==='monthly'?d.setMonth(d.getMonth()+1):d.setDate(d.getDate()+7);setCur(d);};
+  const navLabel=()=>{if(view==='monthly')return`${year}년 ${MONTHS[month]}`;const we=new Date(ws);we.setDate(we.getDate()+6);return`${ws.getMonth()+1}/${ws.getDate()} — ${we.getMonth()+1}/${we.getDate()}`;};
 
-  const prev = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()-1):d.setDate(d.getDate()-7); setCur(d); };
-  const next = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()+1):d.setDate(d.getDate()+7); setCur(d); };
+  const saveAssignment = async f => { await fsSaveAssignment(f, studentId); setAModal(null); };
+  const deleteAssignment = async a => { await fsDeleteAssignment(a.id); setDelConf(null); };
 
-  const navLabel = () => {
-    if (view==='monthly') return `${year}년 ${MONTHS[month]}`;
-    const we=new Date(ws); we.setDate(we.getDate()+6);
-    return `${ws.getMonth()+1}/${ws.getDate()} — ${we.getMonth()+1}/${we.getDate()}`;
-  };
-
-  const saveAssignment = f => {
-    if (aModal.mode==='add') setAssignments(p=>[...p,{...f,id:uid()}]);
-    else setAssignments(p=>p.map(a=>a.id===aModal.data.id?{...f,id:a.id}:a));
-    setAModal(null);
-  };
-
-  const deleteAssignment = a => {
-    setAssignments(p=>p.filter(x=>x.id!==a.id));
-    setLogs(p=>p.filter(l=>l.assignmentId!==a.id));
-    setDelConf(null);
-  };
-
-  const saveLogs = newLogs => {
-    setLogs(p=>{
-      let u=[...p];
-      newLogs.forEach(nl=>{
-        const i=u.findIndex(l=>l.assignmentId===nl.assignmentId&&l.date===nl.date);
-        if (i>=0) u[i]={...u[i],...nl}; else u.push({id:uid(),...nl});
-      });
-      return u;
-    });
-    setPModal(null);
-  };
+  if(loading) return <div className="loading-wrap"><div className="spinner"/><div className="loading-txt">데이터 불러오는 중…</div></div>;
 
   return (
-    <div className="app">
-      <div className="header">
-        <span className="header-title">🎹 Mojo Jazz Studio - 숙제 검사 트래커</span>
-        {tab!=='assignments' && (
-          <div className="view-toggle">
-            <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
-            <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
-          </div>
-        )}
-      </div>
-
+    <div>
       <div className="tab-bar">
         <button className={`tab-btn${tab==='calendar'?' active':''}`} onClick={()=>setTab('calendar')}>📅 캘린더</button>
         <button className={`tab-btn${tab==='assignments'?' active':''}`} onClick={()=>setTab('assignments')}>📝 숙제</button>
         <button className={`tab-btn${tab==='stats'?' active':''}`} onClick={()=>setTab('stats')}>📊 통계</button>
       </div>
 
-      {tab==='assignments'
-        ? <AssignmentsPanel assignments={assignments}
-            onAdd={()=>setAModal({mode:'add',data:null})}
-            onEdit={a=>setAModal({mode:'edit',data:a})}
-            onDel={a=>setDelConf(a)}/>
-        : (
-          <div className="card">
-            <div className="card-header">
-              <div className="nav-controls">
-                <button className="nav-btn" onClick={prev}>‹</button>
-                <span className="nav-label">{navLabel()}</span>
-                <button className="nav-btn" onClick={next}>›</button>
-              </div>
+      <div className="card">
+        {tab!=='assignments' && (
+          <div className="card-header">
+            <div className="nav-controls">
+              <button className="nav-btn" onClick={prev}>‹</button>
+              <span className="nav-label">{navLabel()}</span>
+              <button className="nav-btn" onClick={next}>›</button>
+            </div>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              {tab==='calendar' && (
+                <div className="view-toggle">
+                  <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
+                  <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
+                </div>
+              )}
               <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
             </div>
-
-            {tab==='calendar' && view==='monthly' &&
-              <MonthCal year={year} month={month} assignments={assignments} logs={logs} onDay={setPModal}/>}
-            {tab==='calendar' && view==='weekly' &&
-              <WeekCal wStart={ws} assignments={assignments} logs={logs} onDay={setPModal}/>}
-            {tab==='stats' &&
-              <StatsView assignments={assignments} logs={logs} year={year} month={month}/>}
           </div>
-        )
-      }
+        )}
 
-      {aModal && <AssignmentModal assignment={aModal.data} onSave={saveAssignment} onClose={()=>setAModal(null)}/>}
-      {pModal && <PracticeModal dateStr={pModal} assignments={assignments} logs={logs} onSave={saveLogs} onClose={()=>setPModal(null)}/>}
-      {delConf && <ConfirmModal msg={`"${delConf.title}" 숙제와 모든 연습 기록을 삭제할까요?`} onConfirm={()=>deleteAssignment(delConf)} onClose={()=>setDelConf(null)}/>}
+        {tab==='calendar' && view==='monthly' && <MonthCal year={year} month={month} assignments={assignments} logs={logs} onDay={setPModal}/>}
+        {tab==='calendar' && view==='weekly' && <WeekCal wStart={ws} assignments={assignments} logs={logs} onDay={setPModal}/>}
+        {tab==='assignments' && <AssignmentsPanel assignments={assignments} isTeacher={isTeacher}
+          onAdd={()=>setAModal({mode:'add',data:null})}
+          onEdit={a=>setAModal({mode:'edit',data:a})}
+          onDel={a=>setDelConf(a)}/>}
+        {tab==='stats' && <StatsView assignments={assignments} logs={logs} year={year} month={month}/>}
+      </div>
+
+      {aModal&&<AssignmentModal assignment={aModal.data} onSave={saveAssignment} onClose={()=>setAModal(null)}/>}
+      {pModal&&<PracticeModal dateStr={pModal} assignments={assignments} logs={logs} studentId={studentId} onClose={()=>setPModal(null)}/>}
+      {delConf&&<ConfirmModal msg={`"${delConf.title}" 숙제와 모든 연습 기록을 삭제할까요?`} onConfirm={()=>deleteAssignment(delConf)} onClose={()=>setDelConf(null)}/>}
     </div>
   );
+}
+
+// ── Teacher App ──
+function TeacherApp({user}) {
+  const {students, loading} = useStudents();
+  const [selected, setSelected] = useState(null);
+  const [addModal, setAddModal] = useState(false);
+  const [editModal, setEditModal] = useState(null);
+  const [delConfirm, setDelConfirm] = useState(null);
+
+  const deleteStudent = async s => { await fsDeleteStudent(s.id); setDelConfirm(null); if(selected?.id===s.id) setSelected(null); };
+
+  return (
+    <div className="app">
+      <div className="header">
+        <div className="header-left">
+          {selected
+            ? <><button className="back-btn" onClick={()=>setSelected(null)}>← 학생 목록</button>
+                <span className="breadcrumb-sep">›</span>
+                <span className="breadcrumb-name">
+                  <span style={{display:'inline-block',width:20,height:20,borderRadius:'50%',background:avatarColor(selected.name),color:'#fff',fontSize:'.65rem',fontWeight:800,textAlign:'center',lineHeight:'20px',marginRight:6}}>{avatarInitial(selected.name)}</span>
+                  {selected.name}
+                </span></>
+            : <span className="header-title">🎹 Mojo Jazz Studio</span>
+          }
+        </div>
+        <div className="header-right">
+          <span className="user-name">선생님</span>
+          <button className="btn btn-secondary btn-sm" onClick={()=>auth.signOut()}>로그아웃</button>
+        </div>
+      </div>
+
+      {!selected ? (
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">👥 학생 목록</span>
+            <button className="btn btn-primary btn-sm" onClick={()=>setAddModal(true)}>+ 학생 추가</button>
+          </div>
+          {loading
+            ? <div className="loading-wrap"><div className="spinner"/></div>
+            : <div className="students-grid">
+                {students.map(s=>(
+                  <div key={s.id} className="student-card" onClick={()=>setSelected(s)}>
+                    <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
+                      <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
+                      <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
+                    </div>
+                    <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
+                    <div className="s-name">{s.name}</div>
+                    <div className="s-email">{s.email}</div>
+                  </div>
+                ))}
+                <div className="student-card add-student-card" onClick={()=>setAddModal(true)}>
+                  <div className="add-icon">+</div>
+                  <div className="add-label">학생 추가</div>
+                </div>
+              </div>
+          }
+        </div>
+      ) : (
+        <StudentView studentId={selected.id} isTeacher={true}/>
+      )}
+
+      {addModal&&<AddStudentModal onClose={()=>setAddModal(false)}/>}
+      {editModal&&<EditStudentModal student={editModal} onClose={()=>setEditModal(null)}/>}
+      {delConfirm&&<ConfirmModal msg={`"${delConfirm.name}" 학생과 모든 데이터를 삭제할까요?`} onConfirm={()=>deleteStudent(delConfirm)} onClose={()=>setDelConfirm(null)}/>}
+    </div>
+  );
+}
+
+// ── Student App ──
+function StudentApp({user, userDoc}) {
+  return (
+    <div className="app">
+      <div className="header">
+        <span className="header-title">🎹 Mojo Jazz Studio</span>
+        <div className="header-right">
+          <span className="user-name">{userDoc?.name || user.email}</span>
+          <button className="btn btn-secondary btn-sm" onClick={()=>auth.signOut()}>로그아웃</button>
+        </div>
+      </div>
+      <StudentView studentId={user.uid} isTeacher={false}/>
+    </div>
+  );
+}
+
+// ── Config Warning ──
+function ConfigWarning() {
+  return (
+    <div style={{maxWidth:600,margin:'40px auto',padding:16}}>
+      <div className="config-warn">
+        <strong>⚙️ Firebase 설정이 필요합니다</strong><br/><br/>
+        <code>index.html</code> 파일을 열고 상단의 <code>FIREBASE_CONFIG</code>와 <code>TEACHER_EMAIL</code>을 실제 값으로 교체하세요.<br/><br/>
+        <strong>설정 방법:</strong><br/>
+        1. Firebase Console → 프로젝트 설정 → 웹앱 → SDK 설정에서 config 복사<br/>
+        2. Authentication → Email/Password 사용 설정<br/>
+        3. Firestore Database → 데이터베이스 만들기 (테스트 모드)<br/>
+        4. <code>TEACHER_EMAIL</code>을 선생님 이메일로 변경
+      </div>
+    </div>
+  );
+}
+
+// ── Root App ──
+function App() {
+  const [authUser, setAuthUser] = useState(undefined); // undefined = loading
+  const [userDoc, setUserDoc] = useState(null);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    return auth.onAuthStateChanged(async user => {
+      setAuthUser(user);
+      if (user) {
+        const doc = await db.collection('users').doc(user.uid).get();
+        setUserDoc(doc.exists ? {id:doc.id,...doc.data()} : null);
+      } else { setUserDoc(null); }
+    });
+  }, []);
+
+  if (!isConfigured) return <ConfigWarning/>;
+
+  if (authUser === undefined) return (
+    <div className="login-wrap">
+      <div className="loading-wrap"><div className="spinner"/><div className="loading-txt">로딩 중…</div></div>
+    </div>
+  );
+
+  if (!authUser) return <LoginScreen/>;
+
+  if (!userDoc) return (
+    <div className="login-wrap">
+      <div className="login-card" style={{textAlign:'center'}}>
+        <div style={{fontSize:'2rem',marginBottom:12}}>⚠️</div>
+        <div style={{fontWeight:700,marginBottom:8}}>계정 정보가 없습니다</div>
+        <div style={{fontSize:'.85rem',color:'#888',marginBottom:20}}>선생님에게 계정 생성을 요청하세요.</div>
+        <button className="btn btn-secondary" onClick={()=>auth.signOut()}>로그아웃</button>
+      </div>
+    </div>
+  );
+
+  if (userDoc.role === 'teacher') return <TeacherApp user={authUser}/>;
+  return <StudentApp user={authUser} userDoc={userDoc}/>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
