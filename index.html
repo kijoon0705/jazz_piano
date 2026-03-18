@@ -924,12 +924,14 @@ function ConfigWarning() {
 
 // ── Root App ──
 function App() {
-  const [authUser, setAuthUser] = useState(undefined); // undefined = loading
+  const [authUser, setAuthUser] = useState(undefined);
   const [userDoc, setUserDoc] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
 
   useEffect(() => {
     if (!isConfigured) return;
     return auth.onAuthStateChanged(async user => {
+      setUserLoading(true);
       setAuthUser(user);
       if (user) {
         try {
@@ -946,7 +948,6 @@ function App() {
           }
         } catch(e) {
           console.error('Firestore read failed:', e);
-          // Firestore 접근 실패해도 선생님 이메일이면 진입 허용
           if (isTeacherEmail(user.email)) {
             setUserDoc({id:user.uid, name:'선생님', email:user.email, role:'teacher'});
           } else {
@@ -954,12 +955,13 @@ function App() {
           }
         }
       } else { setUserDoc(null); }
+      setUserLoading(false);
     });
   }, []);
 
   if (!isConfigured) return <ConfigWarning/>;
 
-  if (authUser === undefined) return (
+  if (authUser === undefined || userLoading) return (
     <div className="login-wrap">
       <div className="loading-wrap"><div className="spinner"/><div className="loading-txt">로딩 중…</div></div>
     </div>
