@@ -597,7 +597,7 @@ function MonthCal({year, month, assignments, logs, onDay}) {
             </div>
             {active.slice(0,3).map(a=>{
               const lg=getLog(logs,a.id,c.ds),cnt=lg?.count??0;
-              return <div key={a.id} className={`a-tag${lg?.completed?' done':''}`} style={{background:a.color}}><span className="a-tag-name">{a.title}</span><span className="a-tag-cnt">{cnt}/{a.dailyTarget}</span></div>;
+              return <div key={a.id} className={`a-tag${lg?.completed?' done':''}`} style={{background:a.color}}><span className="a-tag-name">{HAND_EMOJI[a.hand]||''} {a.title}</span><span className="a-tag-cnt">{cnt}/{a.dailyTarget}</span></div>;
             })}
             {active.length>3&&<div className="more-lbl">+{active.length-3}</div>}
             <div className="dot-row">{active.slice(0,5).map(a=>{const lg=getLog(logs,a.id,c.ds);return <div key={a.id} className="dot" style={{background:lg?.completed?a.color:'#e0e0e0',border:`1.5px solid ${a.color}`}}/>;})}</div>
@@ -628,7 +628,7 @@ function WeekCal({wStart, assignments, logs, onDay}) {
               return (
                 <div key={a.id} className="pr-item" style={{borderLeftColor:a.color}}>
                   <div className="pr-title">{a.title}</div>
-                  <div className="pr-song">{a.song}</div>
+                  <div className="pr-song">{a.hand&&<span style={{marginRight:4}}>{HAND_EMOJI[a.hand]||''} {a.hand}</span>}{a.song}</div>
                   <div className="pr-progress">
                     <div className="pbar-wrap"><div className="pbar" style={{width:`${pct}%`,background:a.color}}/></div>
                     <span className="pr-cnt">{cnt}/{a.dailyTarget}</span>
