@@ -393,11 +393,8 @@ function LoginScreen() {
       setLoading(false); return;
     }
     try {
-      const {user} = await auth.createUserWithEmailAndPassword(email.trim(), pw);
-      await db.collection('users').doc(user.uid).set({
-        name:'선생님', email:email.trim(), role:'teacher',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      await auth.createUserWithEmailAndPassword(email.trim(), pw);
+      // Firestore 문서는 onAuthStateChanged에서 자동 생성
     } catch(ex) { setErr(errMsg(ex.code)); }
     setLoading(false);
   };
@@ -935,16 +932,26 @@ function App() {
     return auth.onAuthStateChanged(async user => {
       setAuthUser(user);
       if (user) {
-        const doc = await db.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          setUserDoc({id:doc.id,...doc.data()});
-        } else if (isTeacherEmail(user.email)) {
-          // 선생님 이메일로 처음 로그인 시 Firestore 문서 자동 생성
-          const data = {name:'선생님', email:user.email, role:'teacher', createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-          await db.collection('users').doc(user.uid).set(data);
-          setUserDoc({id:user.uid, ...data});
-        } else {
-          setUserDoc(null);
+        try {
+          const doc = await db.collection('users').doc(user.uid).get();
+          if (doc.exists) {
+            setUserDoc({id:doc.id,...doc.data()});
+          } else if (isTeacherEmail(user.email)) {
+            // 선생님 이메일로 처음 로그인 시 Firestore 문서 자동 생성
+            const data = {name:'선생님', email:user.email, role:'teacher', createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+            try { await db.collection('users').doc(user.uid).set(data); } catch(e) { console.warn('Firestore write failed:', e); }
+            setUserDoc({id:user.uid, ...data});
+          } else {
+            setUserDoc(null);
+          }
+        } catch(e) {
+          console.error('Firestore read failed:', e);
+          // Firestore 접근 실패해도 선생님 이메일이면 진입 허용
+          if (isTeacherEmail(user.email)) {
+            setUserDoc({id:user.uid, name:'선생님', email:user.email, role:'teacher'});
+          } else {
+            setUserDoc(null);
+          }
         }
       } else { setUserDoc(null); }
     });
