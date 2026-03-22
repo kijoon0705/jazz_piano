@@ -1034,10 +1034,11 @@ function TeacherCalendar({students, lessons}) {
                 <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>{isT?<span className="today-bubble">{c.day}</span>:c.day}</div>
                 {dayLessons.slice(0,3).map(l=>{
                   const st=studentMap[l.studentId];
-                  const bg=st?avatarColor(st.name):LESSON_COLOR;
+                  const sTime=l.startAt?l.startAt.split('T')[1]:'';
+                  const eTime=l.endAt?l.endAt.split('T')[1]:'';
                   return (
-                    <div key={l.id} className="a-tag" style={{background:bg}}>
-                      <span className="a-tag-name">🗓 {st?.name||'?'} {l.session}회차</span>
+                    <div key={l.id} className="a-tag" style={{background:ASSIGN_DONE_COLOR}}>
+                      <span className="a-tag-name">🗓 {st?.name||'?'} {sTime&&eTime?`${sTime}~${eTime}`:''}</span>
                     </div>
                   );
                 })}
@@ -1081,10 +1082,9 @@ function TeacherCalendar({students, lessons}) {
               {dayLessons.length===0&&<div className="wday-empty">—</div>}
               {dayLessons.map(l=>{
                 const st=studentMap[l.studentId];
-                const bg=st?avatarColor(st.name):LESSON_COLOR;
                 return (
-                  <div key={l.id} className="pr-item" style={{borderLeftColor:bg,background:`${bg}18`}}>
-                    <div className="pr-title" style={{color:bg}}>{st?.name||'?'} — {l.session}회차</div>
+                  <div key={l.id} className="pr-item" style={{borderLeftColor:ASSIGN_DONE_COLOR,background:`${ASSIGN_DONE_COLOR}18`}}>
+                    <div className="pr-title" style={{color:ASSIGN_DONE_COLOR}}>{st?.name||'?'} — {l.session}회차</div>
                     <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
                   </div>
                 );
