@@ -875,9 +875,9 @@ function StatsView({assignments, logs, lessons, year, month}) {
       </div>
       {stats.length>0&&<div style={{marginTop:16}}>
         <div style={{fontWeight:700,fontSize:'.9rem',marginBottom:10,color:'#555'}}>숙제별 상세</div>
-        {stats.map((a,i)=>{const ac=COLORS[i%COLORS.length];return(
+        {stats.map((a,i)=>{const ac=COLORS[i%COLORS.length];const dotColor=a.rate>80?'#007aff':'#f5a623';return(
           <div key={a.id} className="a-detail-row">
-            <div style={{width:12,height:12,borderRadius:'50%',background:ac,flexShrink:0}}/>
+            <div style={{width:12,height:12,borderRadius:'50%',background:dotColor,flexShrink:0}}/>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontWeight:700,fontSize:'.85rem'}}>{a.song}</div>
               <div style={{fontSize:'.7rem',color:'#aaa',marginTop:1}}>{fmtDateRange(a.startDate,a.endDate)}</div>
