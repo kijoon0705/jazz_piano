@@ -604,7 +604,7 @@ function AssignmentModal({assignment, onSave, onClose}) {
           {['왼손','오른손','양손'].map(h=>(
             <label key={h} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',borderRadius:10,border:`1.5px solid ${f.hand===h?'#007aff':'#e0e0e0'}`,background:f.hand===h?'#f0f5ff':'#fff',cursor:'pointer',fontSize:'.85rem',fontWeight:f.hand===h?700:400,transition:'all .2s'}}>
               <input type="radio" name="hand" value={h} checked={f.hand===h} onChange={()=>set('hand',h)} style={{accentColor:'#007aff'}}/>
-              {h}
+              {HAND_EMOJI[h]} {h}
             </label>
           ))}
         </div>
@@ -912,7 +912,7 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
 }
 
 // ── Assignments Panel ──
-const HAND_EMOJI = {'왼손':'🤚','오른손':'✋','양손':'👐'};
+const HAND_EMOJI = {'왼손':'🤚🏻','오른손':'✋🏻','양손':'👐🏻'};
 
 function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
   return (
