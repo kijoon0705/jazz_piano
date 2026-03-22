@@ -1153,10 +1153,83 @@ function StudentView({studentId, isTeacher, studentDoc}) {
   );
 }
 
+// ── Day Lessons Modal (Teacher) ──
+function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
+  const dayLessons = lessons.filter(l=>l.startAt&&l.startAt.startsWith(dateStr));
+  const [editing, setEditing] = React.useState({});
+  const [saving, setSaving] = React.useState({});
+  const [delConf, setDelConf] = React.useState(null);
+
+  const startEdit = l => setEditing(p=>({...p,[l.id]:{sTime:l.startAt?l.startAt.split('T')[1]:'',eTime:l.endAt?l.endAt.split('T')[1]:'',notes:l.notes||''}}));
+  const cancelEdit = id => setEditing(p=>{const n={...p};delete n[id];return n;});
+  const setField = (id,k,v) => setEditing(p=>({...p,[id]:{...p[id],[k]:v}}));
+
+  const save = async l => {
+    const e=editing[l.id]; if(!e) return;
+    setSaving(p=>({...p,[l.id]:true}));
+    const date=dateStr;
+    await db.collection('lessons').doc(l.id).update({startAt:`${date}T${e.sTime}`,endAt:`${date}T${e.eTime}`,notes:e.notes});
+    setSaving(p=>({...p,[l.id]:false}));
+    cancelEdit(l.id);
+  };
+
+  const del = async l => { await fsDeleteLesson(l.id); setDelConf(null); };
+
+  const [y,m,d]=dateStr.split('-');
+  const dow=DAYS[new Date(Number(y),Number(m)-1,Number(d)).getDay()];
+  return (
+    <Modal title={`${m}.${d}(${dow}) 수업`} onClose={onClose}>
+      {dayLessons.length===0
+        ? <p style={{color:'#aaa',fontSize:'.85rem',padding:'16px 0',textAlign:'center'}}>이 날 등록된 수업이 없습니다.</p>
+        : dayLessons.map(l=>{
+          const st=studentMap[l.studentId];
+          const e=editing[l.id];
+          const isSaving=saving[l.id];
+          return (
+            <div key={l.id} style={{borderBottom:'1px solid #f0f0f0',paddingBottom:14,marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontWeight:700,fontSize:'.95rem'}}>{st?.name||'?'}</span>
+                  <span className="lesson-session-badge">{l.month||1}개월/{l.session}회차</span>
+                </div>
+                <div style={{display:'flex',gap:6}}>
+                  {!e&&<button className="btn btn-secondary btn-sm" onClick={()=>startEdit(l)}>수정</button>}
+                  <button className="btn btn-danger btn-sm" onClick={()=>setDelConf(l)}>삭제</button>
+                </div>
+              </div>
+              {e ? (
+                <div>
+                  <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
+                    <input className="finput" type="time" value={e.sTime} onChange={ev=>setField(l.id,'sTime',ev.target.value)} style={{flex:1}}/>
+                    <span style={{color:'#aaa',flexShrink:0}}>~</span>
+                    <input className="finput" type="time" value={e.eTime} onChange={ev=>setField(l.id,'eTime',ev.target.value)} style={{flex:1}}/>
+                  </div>
+                  <textarea className="finput" rows={2} placeholder="메모" value={e.notes} onChange={ev=>setField(l.id,'notes',ev.target.value)} style={{width:'100%',resize:'vertical',marginBottom:8,fontFamily:'inherit'}}/>
+                  <div style={{display:'flex',gap:6,justifyContent:'flex-end'}}>
+                    <button className="btn btn-secondary btn-sm" onClick={()=>cancelEdit(l.id)}>취소</button>
+                    <button className="btn btn-primary btn-sm" disabled={isSaving} onClick={()=>save(l)}>{isSaving?'저장 중…':'저장'}</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{fontSize:'.85rem',color:'#555'}}>
+                  <div>🕐 {l.startAt?l.startAt.split('T')[1]:''} ~ {l.endAt?l.endAt.split('T')[1]:''}</div>
+                  {l.notes&&<div style={{marginTop:4,color:'#888',whiteSpace:'pre-wrap',lineHeight:1.5}}>💬 {l.notes}</div>}
+                </div>
+              )}
+            </div>
+          );
+        })
+      }
+      {delConf&&<ConfirmModal msg={`${studentMap[delConf.studentId]?.name||'?'} 학생의 수업을 삭제할까요?`} onConfirm={()=>del(delConf)} onClose={()=>setDelConf(null)}/>}
+    </Modal>
+  );
+}
+
 // ── Teacher Calendar ──
 function TeacherCalendar({students, lessons}) {
   const [view, setView] = useState('monthly');
   const [cur, setCur] = useState(new Date());
+  const [dayModal, setDayModal] = React.useState(null);
   const studentMap = Object.fromEntries(students.map(s=>[s.id, s]));
   const ts = todayStr();
   const year = cur.getFullYear(), month = cur.getMonth(), ws = weekStart(cur);
@@ -1164,6 +1237,24 @@ function TeacherCalendar({students, lessons}) {
   const next = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()+1):d.setDate(d.getDate()+7); setCur(d); };
   const navLabel = () => { if(view==='monthly') return `${year}년 ${MONTHS[month]}`; const we=new Date(ws); we.setDate(we.getDate()+6); return `${ws.getMonth()+1}/${ws.getDate()} — ${we.getMonth()+1}/${we.getDate()}`; };
 
+  const navBar = (
+    <div className="card-header" style={{marginBottom:12}}>
+      <div className="nav-controls">
+        <button className="nav-btn" onClick={prev}>‹</button>
+        <span className="nav-label">{navLabel()}</span>
+        <button className="nav-btn" onClick={next}>›</button>
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        <div className="view-toggle">
+          <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
+          <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
+        </div>
+        <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
+      </div>
+    </div>
+  );
+
+  let calView;
   if (view === 'monthly') {
     const first=new Date(year,month,1).getDay(), dim=new Date(year,month+1,0).getDate(), dipm=new Date(year,month,0).getDate();
     const cells=[];
@@ -1171,73 +1262,40 @@ function TeacherCalendar({students, lessons}) {
     for(let d=1;d<=dim;d++)cells.push({day:d,ds:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:true});
     const rem=42-cells.length;
     for(let d=1;d<=rem;d++){const nm=month+2>12?1:month+2,ny=month+2>12?year+1:year;cells.push({day:d,ds:`${ny}-${String(nm).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:false});}
-    return (
-      <div>
-        <div className="card-header" style={{marginBottom:12}}>
-          <div className="nav-controls">
-            <button className="nav-btn" onClick={prev}>‹</button>
-            <span className="nav-label">{navLabel()}</span>
-            <button className="nav-btn" onClick={next}>›</button>
-          </div>
-          <div style={{display:'flex',gap:8,alignItems:'center'}}>
-            <div className="view-toggle">
-              <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
-              <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
+    calView = (
+      <div className="cal-grid">
+        {DAYS.map((d,i)=><div key={d} className={`day-lbl${i===0?' sun':i===6?' sat':''}`}>{d}</div>)}
+        {cells.map((c,idx)=>{
+          const dow=idx%7,isT=c.ds===ts;
+          const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(c.ds));
+          return (
+            <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`} onClick={()=>setDayModal(c.ds)} style={{cursor:'pointer'}}>
+              <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>{isT?<span className="today-bubble">{c.day}</span>:c.day}</div>
+              {dayLessons.slice(0,3).map(l=>{
+                const st=studentMap[l.studentId];
+                const sTime=l.startAt?l.startAt.split('T')[1]:'';
+                const eTime=l.endAt?l.endAt.split('T')[1]:'';
+                return (
+                  <div key={l.id} className="a-tag" style={{background:ASSIGN_DONE_COLOR}}>
+                    <span className="a-tag-name">🗓 {st?.name||'?'} {l.month||1}개월/{l.session}회차 {sTime&&eTime?`${sTime}~${eTime}`:''}</span>
+                  </div>
+                );
+              })}
+              {dayLessons.length>3&&<div className="more-lbl">+{dayLessons.length-3}</div>}
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
-          </div>
-        </div>
-        <div className="cal-grid">
-          {DAYS.map((d,i)=><div key={d} className={`day-lbl${i===0?' sun':i===6?' sat':''}`}>{d}</div>)}
-          {cells.map((c,idx)=>{
-            const dow=idx%7,isT=c.ds===ts;
-            const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(c.ds));
-            return (
-              <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`}>
-                <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>{isT?<span className="today-bubble">{c.day}</span>:c.day}</div>
-                {dayLessons.slice(0,3).map(l=>{
-                  const st=studentMap[l.studentId];
-                  const sTime=l.startAt?l.startAt.split('T')[1]:'';
-                  const eTime=l.endAt?l.endAt.split('T')[1]:'';
-                  return (
-                    <div key={l.id} className="a-tag" style={{background:ASSIGN_DONE_COLOR}}>
-                      <span className="a-tag-name">🗓 {st?.name||'?'} {l.month||1}개월/{l.session}회차 {sTime&&eTime?`${sTime}~${eTime}`:''}</span>
-                    </div>
-                  );
-                })}
-                {dayLessons.length>3&&<div className="more-lbl">+{dayLessons.length-3}</div>}
-              </div>
-            );
-          })}
-        </div>
+          );
+        })}
       </div>
     );
-  }
-
-  // Weekly view
-  const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return{date:d,ds:toStr(d)};});
-  return (
-    <div>
-      <div className="card-header" style={{marginBottom:12}}>
-        <div className="nav-controls">
-          <button className="nav-btn" onClick={prev}>‹</button>
-          <span className="nav-label">{navLabel()}</span>
-          <button className="nav-btn" onClick={next}>›</button>
-        </div>
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <div className="view-toggle">
-            <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
-            <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
-          </div>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
-        </div>
-      </div>
+  } else {
+    const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return{date:d,ds:toStr(d)};});
+    calView = (
       <div className="week-grid">
         {days.map(({date,ds},i)=>{
           const isT=ds===ts,dow=date.getDay();
           const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(ds));
           return (
-            <div key={ds} className={`week-day${isT?' today':''}`}>
+            <div key={ds} className={`week-day${isT?' today':''}`} onClick={()=>setDayModal(ds)} style={{cursor:'pointer'}}>
               <div className="wday-hdr">
                 <div className={`wday-name${dow===0?' sun':dow===6?' sat':''}`}>{DAYS[dow]}</div>
                 <div className={`wday-num${isT?' today-b':dow===0?' sun-n':dow===6?' sat-n':''}`}>{date.getDate()}</div>
@@ -1256,6 +1314,14 @@ function TeacherCalendar({students, lessons}) {
           );
         })}
       </div>
+    );
+  }
+
+  return (
+    <div>
+      {navBar}
+      {calView}
+      {dayModal&&<DayLessonsModal dateStr={dayModal} lessons={lessons} studentMap={studentMap} onClose={()=>setDayModal(null)}/>}
     </div>
   );
 }
