@@ -756,6 +756,72 @@ function WeekCal({wStart, assignments, logs, lessons, onDay}) {
   );
 }
 
+// ── Practice Heatmap ──
+function PracticeHeatmap({logs}) {
+  const today=new Date();
+  const curYear=today.getFullYear();
+  const countMap={};
+  logs.forEach(l=>{if(l.date&&l.date.startsWith(String(curYear)))countMap[l.date]=(countMap[l.date]||0)+(l.count||0);});
+  const getColor=n=>{if(!n)return'#ebedf0';if(n<=2)return'#c6e48b';if(n<=4)return'#7bc96f';if(n<=7)return'#239a3b';return'#196127';};
+  const start=new Date(curYear,0,1);
+  start.setDate(start.getDate()-start.getDay());
+  const end=new Date(curYear,11,31);
+  const weeks=[];
+  const cur=new Date(start);
+  while(cur<=end){
+    const wk=[];
+    for(let d=0;d<7;d++){
+      const ds=cur.toISOString().split('T')[0];
+      const inYear=cur.getFullYear()===curYear;
+      wk.push({date:ds,count:inYear?(countMap[ds]||0):null,inYear,month:cur.getMonth(),dow:cur.getDay()});
+      cur.setDate(cur.getDate()+1);
+    }
+    weeks.push(wk);
+  }
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const cs=11,gap=2;
+  return (
+    <div style={{background:'#fafafa',borderRadius:12,padding:'12px 14px',marginBottom:14,overflowX:'auto'}}>
+      <div style={{fontWeight:700,fontSize:'.85rem',color:'#555',marginBottom:8}}>{curYear}년 연습 기록</div>
+      <div style={{display:'flex',gap:4,minWidth:'max-content'}}>
+        <div style={{display:'flex',flexDirection:'column',gap:gap,paddingTop:18}}>
+          {['','Mon','','Wed','','Fri',''].map((l,i)=>(
+            <div key={i} style={{height:cs,fontSize:9,color:'#999',lineHeight:cs+'px',textAlign:'right',paddingRight:4}}>{l}</div>
+          ))}
+        </div>
+        <div>
+          <div style={{display:'flex',marginBottom:3,height:14}}>
+            {weeks.map((wk,wi)=>{
+              const first=wk.find(d=>d.inYear);
+              if(!first)return <div key={wi} style={{width:cs+gap,flexShrink:0}}/>;
+              const dt=new Date(first.date);
+              const show=dt.getDate()<=7;
+              return <div key={wi} style={{width:cs+gap,flexShrink:0,fontSize:9,color:'#999',overflow:'visible',whiteSpace:'nowrap'}}>{show?MONTHS[dt.getMonth()]:''}</div>;
+            })}
+          </div>
+          <div style={{display:'flex',gap:gap}}>
+            {weeks.map((wk,wi)=>(
+              <div key={wi} style={{display:'flex',flexDirection:'column',gap:gap}}>
+                {wk.map((day,di)=>(
+                  <div key={di} title={day.inYear?`${day.date}: ${day.count}회`:''}
+                    style={{width:cs,height:cs,borderRadius:2,background:day.inYear?getColor(day.count):'transparent'}}/>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:3,marginTop:6,justifyContent:'flex-end',fontSize:9,color:'#999'}}>
+        <span>Less</span>
+        {['#ebedf0','#c6e48b','#7bc96f','#239a3b','#196127'].map((c,i)=>(
+          <div key={i} style={{width:10,height:10,borderRadius:2,background:c}}/>
+        ))}
+        <span>More</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Stats View ──
 function StatsView({assignments, logs, year, month}) {
   const refs=useRef({}), charts=useRef({});
@@ -785,6 +851,7 @@ function StatsView({assignments, logs, year, month}) {
   if(stats.length===0&&totalCount===0)return <div className="empty"><div className="empty-icon">📊</div><div className="empty-txt">이번 달 데이터가 없습니다</div></div>;
   return (
     <div>
+      <PracticeHeatmap logs={logs}/>
       <div className="stat-cards">
         <div className="stat-card"><div className="stat-num">{totalCount}</div><div className="stat-lbl">총 연습 횟수</div></div>
         <div className="stat-card"><div className="stat-num">{totalDone}</div><div className="stat-lbl">완료 체크</div></div>
