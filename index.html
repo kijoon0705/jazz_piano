@@ -695,7 +695,7 @@ function MonthCal({year, month, assignments, logs, lessons, onDay}) {
             </div>
             {dayLessons.slice(0,1).map(l=>(
               <div key={l.id} className="a-tag" style={{background:LESSON_COLOR}}>
-                <span className="a-tag-name">🗓 {l.month||1}개월/{l.session}회차</span>
+                <span className="a-tag-name">🗓 {l.month||1}개월/{l.session}회차 {l.startAt?l.startAt.split('T')[1]:''}{l.endAt?' ~ '+l.endAt.split('T')[1]:''}</span>
               </div>
             ))}
             {shownAssign.map(a=>{
