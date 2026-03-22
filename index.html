@@ -825,13 +825,6 @@ function PracticeHeatmap({logs}) {
           </div>
         </div>
       </div>
-      <div style={{display:'flex',alignItems:'center',gap:3,marginTop:6,justifyContent:'flex-end',fontSize:9,color:'#999'}}>
-        <span>Less</span>
-        {['#ebedf0','#c6e48b','#7bc96f','#239a3b','#196127'].map((c,i)=>(
-          <div key={i} style={{width:10,height:10,borderRadius:2,background:c}}/>
-        ))}
-        <span>More</span>
-      </div>
     </div>
   );
 }
