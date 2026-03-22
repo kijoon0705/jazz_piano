@@ -1252,9 +1252,9 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
                   </div>
                   {l.notes&&(()=>{
                     const lines=l.notes.split('\n');
-                    const isLong=lines.length>2||(l.notes.length>60);
+                    const isLong=lines.length>1||(l.notes.length>30);
                     const isExp=!!expanded[l.id];
-                    const preview=lines.slice(0,2).join('\n');
+                    const preview=lines.slice(0,1).join('\n');
                     return (
                       <div style={{display:'flex',alignItems:'flex-start',gap:6,fontSize:'.83rem',color:'#888',lineHeight:1.5}}>
                         <span style={{width:16,textAlign:'center',flexShrink:0,marginTop:1}}>💬</span>
