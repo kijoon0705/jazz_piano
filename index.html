@@ -92,6 +92,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .session-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .session-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.85rem;font-weight:700;color:#888;transition:all .15s}
 .session-btn.sel{border-color:#007aff;background:#007aff;color:#fff}
+.teacher-tabs{display:flex;gap:0;border-bottom:2px solid #f0f0f0;margin-bottom:16px}
+.teacher-tab{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:.9rem;font-weight:600;color:#aaa;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.teacher-tab.active{color:#007aff;border-bottom-color:#007aff}
 .enrollment-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:6px}
 .enrollment-badge.active{background:#e8f5e9;color:#2e7d32}
 .enrollment-badge.inactive{background:#fce4ec;color:#c62828}
@@ -393,6 +396,16 @@ function useLessons(studentId) {
       .onSnapshot(s => setLessons(s.docs.map(d=>({id:d.id,...d.data()}))));
     return unsub;
   }, [studentId]);
+  return lessons;
+}
+
+function useAllLessons() {
+  const [lessons, setLessons] = useState([]);
+  useEffect(() => {
+    const unsub = db.collection('lessons')
+      .onSnapshot(s => setLessons(s.docs.map(d=>({id:d.id,...d.data()}))));
+    return unsub;
+  }, []);
   return lessons;
 }
 
@@ -977,10 +990,119 @@ function StudentView({studentId, isTeacher, studentDoc}) {
   );
 }
 
+// ── Teacher Calendar ──
+function TeacherCalendar({students, lessons}) {
+  const [view, setView] = useState('monthly');
+  const [cur, setCur] = useState(new Date());
+  const studentMap = Object.fromEntries(students.map(s=>[s.id, s]));
+  const ts = todayStr();
+  const year = cur.getFullYear(), month = cur.getMonth(), ws = weekStart(cur);
+  const prev = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()-1):d.setDate(d.getDate()-7); setCur(d); };
+  const next = () => { const d=new Date(cur); view==='monthly'?d.setMonth(d.getMonth()+1):d.setDate(d.getDate()+7); setCur(d); };
+  const navLabel = () => { if(view==='monthly') return `${year}년 ${MONTHS[month]}`; const we=new Date(ws); we.setDate(we.getDate()+6); return `${ws.getMonth()+1}/${ws.getDate()} — ${we.getMonth()+1}/${we.getDate()}`; };
+
+  if (view === 'monthly') {
+    const first=new Date(year,month,1).getDay(), dim=new Date(year,month+1,0).getDate(), dipm=new Date(year,month,0).getDate();
+    const cells=[];
+    for(let i=first-1;i>=0;i--){const d=dipm-i,m2=month===0?12:month,y2=month===0?year-1:year;cells.push({day:d,ds:`${y2}-${String(m2).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:false});}
+    for(let d=1;d<=dim;d++)cells.push({day:d,ds:`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:true});
+    const rem=42-cells.length;
+    for(let d=1;d<=rem;d++){const nm=month+2>12?1:month+2,ny=month+2>12?year+1:year;cells.push({day:d,ds:`${ny}-${String(nm).padStart(2,'0')}-${String(d).padStart(2,'0')}`,cur:false});}
+    return (
+      <div>
+        <div className="card-header" style={{marginBottom:12}}>
+          <div className="nav-controls">
+            <button className="nav-btn" onClick={prev}>‹</button>
+            <span className="nav-label">{navLabel()}</span>
+            <button className="nav-btn" onClick={next}>›</button>
+          </div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <div className="view-toggle">
+              <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
+              <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
+          </div>
+        </div>
+        <div className="cal-grid">
+          {DAYS.map((d,i)=><div key={d} className={`day-lbl${i===0?' sun':i===6?' sat':''}`}>{d}</div>)}
+          {cells.map((c,idx)=>{
+            const dow=idx%7,isT=c.ds===ts;
+            const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(c.ds));
+            return (
+              <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`}>
+                <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>{isT?<span className="today-bubble">{c.day}</span>:c.day}</div>
+                {dayLessons.slice(0,3).map(l=>{
+                  const st=studentMap[l.studentId];
+                  const bg=st?avatarColor(st.name):LESSON_COLOR;
+                  return (
+                    <div key={l.id} className="a-tag" style={{background:bg}}>
+                      <span className="a-tag-name">🗓 {st?.name||'?'} {l.session}회차</span>
+                    </div>
+                  );
+                })}
+                {dayLessons.length>3&&<div className="more-lbl">+{dayLessons.length-3}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Weekly view
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return{date:d,ds:toStr(d)};});
+  return (
+    <div>
+      <div className="card-header" style={{marginBottom:12}}>
+        <div className="nav-controls">
+          <button className="nav-btn" onClick={prev}>‹</button>
+          <span className="nav-label">{navLabel()}</span>
+          <button className="nav-btn" onClick={next}>›</button>
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <div className="view-toggle">
+            <button className={`vbtn${view==='monthly'?' active':''}`} onClick={()=>setView('monthly')}>월간</button>
+            <button className={`vbtn${view==='weekly'?' active':''}`} onClick={()=>setView('weekly')}>주간</button>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setCur(new Date())}>오늘</button>
+        </div>
+      </div>
+      <div className="week-grid">
+        {days.map(({date,ds},i)=>{
+          const isT=ds===ts,dow=date.getDay();
+          const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(ds));
+          return (
+            <div key={ds} className={`week-day${isT?' today':''}`}>
+              <div className="wday-hdr">
+                <div className={`wday-name${dow===0?' sun':dow===6?' sat':''}`}>{DAYS[dow]}</div>
+                <div className={`wday-num${isT?' today-b':dow===0?' sun-n':dow===6?' sat-n':''}`}>{date.getDate()}</div>
+              </div>
+              {dayLessons.length===0&&<div className="wday-empty">—</div>}
+              {dayLessons.map(l=>{
+                const st=studentMap[l.studentId];
+                const bg=st?avatarColor(st.name):LESSON_COLOR;
+                return (
+                  <div key={l.id} className="pr-item" style={{borderLeftColor:bg,background:`${bg}18`}}>
+                    <div className="pr-title" style={{color:bg}}>{st?.name||'?'} — {l.session}회차</div>
+                    <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Teacher App ──
 function TeacherApp({user}) {
   const {students, loading} = useStudents();
+  const allLessons = useAllLessons();
   const [selected, setSelected] = useState(null);
+  const [mainTab, setMainTab] = useState('students');
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(null);
   const [delConfirm, setDelConfirm] = useState(null);
@@ -1027,46 +1149,61 @@ function TeacherApp({user}) {
         </div>
       </div>
 
-      {!selected ? (
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">👥 학생 목록</span>
-            <button className="btn btn-primary btn-sm" onClick={()=>setAddModal(true)}>+ 학생 추가</button>
-          </div>
-          <div className="enrollment-filter">
-            {['전체','수강 중','수강 중단'].map(f=>(
-              <button key={f} className={enrollFilter===f?'active-filter':''} onClick={()=>setEnrollFilter(f)}>{f}</button>
-            ))}
-          </div>
-          {loading
-            ? <div className="loading-wrap"><div className="spinner"/></div>
-            : <div className="students-grid">
-                {filteredStudents.map(s=>{
-                  const isActive = (s.enrollmentStatus || '수강 중') === '수강 중';
-                  return (
-                  <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>selectStudent(s)}>
-                    <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
-                      <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
-                      <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
-                      <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
-                    </div>
-                    <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
-                    <div className="s-name">{s.name}</div>
-                    <div className="s-email">{s.email}</div>
-                    {s.registeredAt && <div style={{fontSize:'.68rem',color:'#999',marginTop:3}}>등록일 {s.registeredAt}</div>}
-                    <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
-                  </div>
-                  );
-                })}
-                <div className="student-card add-student-card" onClick={()=>setAddModal(true)}>
-                  <div className="add-icon">+</div>
-                  <div className="add-label">학생 추가</div>
-                </div>
-              </div>
-          }
-        </div>
-      ) : (
+      {selected ? (
         <StudentView studentId={selected.id} isTeacher={true} studentDoc={selected}/>
+      ) : (
+        <>
+          <div className="teacher-tabs">
+            <button className={`teacher-tab${mainTab==='students'?' active':''}`} onClick={()=>setMainTab('students')}>👥 학생 목록</button>
+            <button className={`teacher-tab${mainTab==='calendar'?' active':''}`} onClick={()=>setMainTab('calendar')}>📅 캘린더</button>
+          </div>
+
+          {mainTab==='students' && (
+            <div className="card">
+              <div className="card-header">
+                <span className="card-title">👥 학생 목록</span>
+                <button className="btn btn-primary btn-sm" onClick={()=>setAddModal(true)}>+ 학생 추가</button>
+              </div>
+              <div className="enrollment-filter">
+                {['전체','수강 중','수강 중단'].map(f=>(
+                  <button key={f} className={enrollFilter===f?'active-filter':''} onClick={()=>setEnrollFilter(f)}>{f}</button>
+                ))}
+              </div>
+              {loading
+                ? <div className="loading-wrap"><div className="spinner"/></div>
+                : <div className="students-grid">
+                    {filteredStudents.map(s=>{
+                      const isActive = (s.enrollmentStatus || '수강 중') === '수강 중';
+                      return (
+                        <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>selectStudent(s)}>
+                          <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
+                            <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
+                            <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
+                            <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
+                          </div>
+                          <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
+                          <div className="s-name">{s.name}</div>
+                          <div className="s-email">{s.email}</div>
+                          {s.registeredAt && <div style={{fontSize:'.68rem',color:'#999',marginTop:3}}>등록일 {s.registeredAt}</div>}
+                          <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
+                        </div>
+                      );
+                    })}
+                    <div className="student-card add-student-card" onClick={()=>setAddModal(true)}>
+                      <div className="add-icon">+</div>
+                      <div className="add-label">학생 추가</div>
+                    </div>
+                  </div>
+              }
+            </div>
+          )}
+
+          {mainTab==='calendar' && (
+            <div className="card">
+              <TeacherCalendar students={students} lessons={allLessons}/>
+            </div>
+          )}
+        </>
       )}
 
       {addModal&&<AddStudentModal onClose={()=>setAddModal(false)}/>}
