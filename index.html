@@ -975,6 +975,51 @@ function LessonModal({lesson, onSave, onClose}) {
   );
 }
 
+// ── Lesson Card ──
+function LessonCard({l, isTeacher, onEdit, onDel}) {
+  const [expanded, setExpanded] = React.useState(false);
+  const [overflows, setOverflows] = React.useState(false);
+  const notesRef = useRef(null);
+  useEffect(()=>{
+    if(notesRef.current){
+      setOverflows(notesRef.current.scrollHeight > notesRef.current.clientHeight + 1);
+    }
+  },[l.notes]);
+  return (
+    <div className="lesson-card">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
+          <div className="lesson-time">🕐 {fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
+        </div>
+        {isTeacher && (
+          <div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
+            <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(l)}>수정</button>
+            <button className="btn btn-danger btn-sm" onClick={()=>onDel(l)}>삭제</button>
+          </div>
+        )}
+      </div>
+      {l.notes && (
+        <div style={{marginTop:8}}>
+          <div ref={notesRef} className="lesson-notes" style={{
+            marginTop:0,
+            overflow:'hidden',
+            display:'-webkit-box',
+            WebkitLineClamp: expanded ? 'unset' : 1,
+            WebkitBoxOrient:'vertical',
+          }}>💬 {l.notes}</div>
+          {(overflows || expanded) && (
+            <button onClick={()=>setExpanded(v=>!v)} style={{
+              background:'none',border:'none',color:'#007aff',fontSize:'.75rem',
+              fontWeight:600,cursor:'pointer',padding:'2px 0',marginTop:2
+            }}>{expanded ? '접기 ▲' : '펼치기 ▼'}</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Lessons Panel ──
 function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
   const sorted = [...lessons].sort((a,b) => b.startAt.localeCompare(a.startAt));
@@ -989,23 +1034,7 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
       {!isTeacher && <div className="card-header" style={{marginBottom:12}}><span className="card-title">🗓 수업 목록</span></div>}
       {sorted.length === 0
         ? <div className="empty"><div className="empty-icon">🎹</div><div className="empty-txt">등록된 수업이 없습니다.</div></div>
-        : sorted.map(l => (
-          <div key={l.id} className="lesson-card">
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-              <div>
-                <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
-                <div className="lesson-time">🕐 {fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
-              </div>
-              {isTeacher && (
-                <div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
-                  <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(l)}>수정</button>
-                  <button className="btn btn-danger btn-sm" onClick={()=>onDel(l)}>삭제</button>
-                </div>
-              )}
-            </div>
-            {l.notes && <div className="lesson-notes">💬 {l.notes}</div>}
-          </div>
-        ))
+        : sorted.map(l => <LessonCard key={l.id} l={l} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)
       }
     </div>
   );
