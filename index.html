@@ -776,7 +776,6 @@ function StatsView({assignments, logs, year, month}) {
     if(stats.length>0){
       const autoColor=(_,i)=>COLORS[i%COLORS.length];
       build('bar','bar',{labels:stats.map(a=>a.song),datasets:[{label:'달성률(%)',data:stats.map(a=>a.rate),backgroundColor:stats.map((_,i)=>autoColor(_,i)+'bb'),borderColor:stats.map(autoColor),borderWidth:2,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}});
-      build('doughnut','doughnut',{labels:stats.map(a=>a.song),datasets:[{data:stats.map(a=>a.actual),backgroundColor:stats.map((_,i)=>autoColor(_,i)+'bb'),borderColor:stats.map(autoColor),borderWidth:2}]},{plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}});
     }
     const dailyCounts=Array.from({length:dim},(_,i)=>{const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;return mLogs.filter(l=>l.date===ds).reduce((s,l)=>s+(l.count||0),0);});
     build('line','line',{labels:Array.from({length:dim},(_,i)=>`${i+1}`),datasets:[{label:'연습 횟수',data:dailyCounts,borderColor:'#007aff',backgroundColor:'#007aff22',fill:true,tension:.3,pointRadius:3}]},{plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{stepSize:1},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{maxTicksLimit:15}}}});
@@ -793,8 +792,7 @@ function StatsView({assignments, logs, year, month}) {
         <div className="stat-card"><div className="stat-num" style={{color:avgRate>=80?'#34c759':avgRate>=50?'#ff9500':'#ff3b30'}}>{avgRate}%</div><div className="stat-lbl">평균 달성률</div></div>
       </div>
       <div className="charts-grid">
-        {stats.length>0&&<><div className="chart-card"><div className="chart-ttl">숙제별 달성률</div><div style={{height:200}}><canvas ref={el=>refs.current['bar']=el}/></div></div>
-        <div className="chart-card"><div className="chart-ttl">숙제별 연습 비중</div><div style={{height:200}}><canvas ref={el=>refs.current['doughnut']=el}/></div></div></>}
+        {stats.length>0&&<div className="chart-card"><div className="chart-ttl">숙제별 달성률</div><div style={{height:200}}><canvas ref={el=>refs.current['bar']=el}/></div></div>}
         <div className="chart-card full"><div className="chart-ttl">일별 연습 횟수</div><div style={{height:160}}><canvas ref={el=>refs.current['line']=el}/></div></div>
       </div>
       {stats.length>0&&<div style={{marginTop:16}}>
