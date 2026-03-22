@@ -695,7 +695,7 @@ function MonthCal({year, month, assignments, logs, lessons, onDay}) {
             </div>
             {dayLessons.slice(0,1).map(l=>(
               <div key={l.id} className="a-tag" style={{background:LESSON_COLOR}}>
-                <span className="a-tag-name">🗓 {l.session}회차</span>
+                <span className="a-tag-name">🗓 {l.month||1}개월/{l.session}회차</span>
               </div>
             ))}
             {shownAssign.map(a=>{
@@ -731,7 +731,7 @@ function WeekCal({wStart, assignments, logs, lessons, onDay}) {
             {active.length===0&&dayLessons.length===0&&<div className="wday-empty">—</div>}
             {dayLessons.map(l=>(
               <div key={l.id} className="pr-item" style={{borderLeftColor:LESSON_COLOR,background:'#f0f5ff'}}>
-                <div className="pr-title" style={{color:LESSON_COLOR}}>🗓 수업 {l.session}회차</div>
+                <div className="pr-title" style={{color:LESSON_COLOR}}>🗓 수업 {l.month||1}개월 / {l.session}회차</div>
                 <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
               </div>
             ))}
@@ -835,19 +835,25 @@ function LessonModal({lesson, onSave, onClose}) {
   const initSplit = dt => dt ? dt.split('T') : [todayISO, ''];
   const [sDate, setSDate] = useState(() => initSplit(lesson?.startAt)[0]);
   const [sTime, setSTime] = useState(() => initSplit(lesson?.startAt)[1]);
-  const [eDate, setEDate] = useState(() => initSplit(lesson?.endAt)[0]);
   const [eTime, setETime] = useState(() => initSplit(lesson?.endAt)[1]);
+  const [month, setMonth] = useState(lesson?.month || 1);
   const [session, setSession] = useState(lesson?.session || 1);
   const [notes, setNotes] = useState(lesson?.notes || '');
 
-  const valid = sDate && sTime && eDate && eTime;
+  const addMins = mins => {
+    if (!sTime) return;
+    const [h, m] = sTime.split(':').map(Number);
+    const total = h * 60 + m + mins;
+    setETime(`${pad(Math.floor(total/60)%24)}:${pad(total%60)}`);
+  };
+
+  const valid = sDate && sTime && eTime;
   const handle = () => {
     onSave({
       id: lesson?.id,
       startAt: `${sDate}T${sTime}`,
-      endAt: `${eDate}T${eTime}`,
-      session,
-      notes,
+      endAt: `${sDate}T${eTime}`,
+      month, session, notes,
     });
   };
   return (
@@ -855,16 +861,26 @@ function LessonModal({lesson, onSave, onClose}) {
       footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
         <button className="btn btn-primary" disabled={!valid} onClick={handle}>저장</button></>}>
       <div className="frow">
-        <div className="fg"><label className="flabel">수업 시작일 *</label>
+        <div className="fg"><label className="flabel">수업일 *</label>
           <input className="finput" type="date" value={sDate} onChange={e=>setSDate(e.target.value)}/></div>
         <div className="fg"><label className="flabel">시작 시간 *</label>
           <input className="finput" type="time" value={sTime} onChange={e=>setSTime(e.target.value)}/></div>
       </div>
-      <div className="frow">
-        <div className="fg"><label className="flabel">수업 종료일 *</label>
-          <input className="finput" type="date" value={eDate} min={sDate} onChange={e=>setEDate(e.target.value)}/></div>
-        <div className="fg"><label className="flabel">종료 시간 *</label>
-          <input className="finput" type="time" value={eTime} onChange={e=>setETime(e.target.value)}/></div>
+      <div className="fg"><label className="flabel">종료 시간 빠른 설정</label>
+        <div style={{display:'flex',gap:6,marginTop:4}}>
+          {[15,30,45,60].map(m=>(
+            <button key={m} className="btn btn-secondary btn-sm" onClick={()=>addMins(m)} style={{flex:1}}>+{m}분</button>
+          ))}
+        </div>
+      </div>
+      <div className="fg"><label className="flabel">종료 시간 *</label>
+        <input className="finput" type="time" value={eTime} onChange={e=>setETime(e.target.value)}/></div>
+      <div className="fg"><label className="flabel">개월</label>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>Math.max(1,v-1))} style={{width:32,padding:'4px 0',textAlign:'center'}}>−</button>
+          <span style={{fontWeight:700,fontSize:'1rem',minWidth:40,textAlign:'center'}}>{month}개월</span>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>v+1)} style={{width:32,padding:'4px 0',textAlign:'center'}}>+</button>
+        </div>
       </div>
       <div className="fg"><label className="flabel">회차</label>
         <div className="session-toggle">
@@ -898,7 +914,7 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
           <div key={l.id} className="lesson-card">
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
               <div>
-                <span className="lesson-session-badge">{l.session}회차</span>
+                <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
                 <div className="lesson-time">🕐 {fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
               </div>
               {isTeacher && (
@@ -1081,7 +1097,7 @@ function TeacherCalendar({students, lessons}) {
                   const eTime=l.endAt?l.endAt.split('T')[1]:'';
                   return (
                     <div key={l.id} className="a-tag" style={{background:ASSIGN_DONE_COLOR}}>
-                      <span className="a-tag-name">🗓 {st?.name||'?'} {sTime&&eTime?`${sTime}~${eTime}`:''}</span>
+                      <span className="a-tag-name">🗓 {st?.name||'?'} {l.month||1}개월/{l.session}회차 {sTime&&eTime?`${sTime}~${eTime}`:''}</span>
                     </div>
                   );
                 })}
@@ -1127,7 +1143,7 @@ function TeacherCalendar({students, lessons}) {
                 const st=studentMap[l.studentId];
                 return (
                   <div key={l.id} className="pr-item" style={{borderLeftColor:ASSIGN_DONE_COLOR,background:`${ASSIGN_DONE_COLOR}18`}}>
-                    <div className="pr-title" style={{color:ASSIGN_DONE_COLOR}}>{st?.name||'?'} — {l.session}회차</div>
+                    <div className="pr-title" style={{color:ASSIGN_DONE_COLOR}}>{st?.name||'?'} — {l.month||1}개월 / {l.session}회차</div>
                     <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
                   </div>
                 );
