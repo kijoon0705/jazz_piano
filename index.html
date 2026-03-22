@@ -1159,6 +1159,7 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
   const [editing, setEditing] = React.useState({});
   const [saving, setSaving] = React.useState({});
   const [delConf, setDelConf] = React.useState(null);
+  const [expanded, setExpanded] = React.useState({});
 
   const startEdit = l => setEditing(p=>({...p,[l.id]:{sTime:l.startAt?l.startAt.split('T')[1]:'',eTime:l.endAt?l.endAt.split('T')[1]:'',notes:l.notes||''}}));
   const cancelEdit = id => setEditing(p=>{const n={...p};delete n[id];return n;});
@@ -1219,10 +1220,21 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
                     <span style={{width:16,textAlign:'center',flexShrink:0}}>🕐</span>
                     <span>{sTime} ~ {eTime}</span>
                   </div>
-                  {l.notes&&<div style={{display:'flex',alignItems:'flex-start',gap:6,fontSize:'.83rem',color:'#888',lineHeight:1.5}}>
-                    <span style={{width:16,textAlign:'center',flexShrink:0}}>💬</span>
-                    <span style={{whiteSpace:'pre-wrap'}}>{l.notes}</span>
-                  </div>}
+                  {l.notes&&(()=>{
+                    const lines=l.notes.split('\n');
+                    const isLong=lines.length>2||(l.notes.length>60);
+                    const isExp=!!expanded[l.id];
+                    const preview=lines.slice(0,2).join('\n');
+                    return (
+                      <div style={{display:'flex',alignItems:'flex-start',gap:6,fontSize:'.83rem',color:'#888',lineHeight:1.5}}>
+                        <span style={{width:16,textAlign:'center',flexShrink:0,marginTop:1}}>💬</span>
+                        <div style={{flex:1,minWidth:0}}>
+                          <span style={{whiteSpace:'pre-wrap'}}>{isLong&&!isExp?preview+(lines.length>2?'…':''):l.notes}</span>
+                          {isLong&&<button onClick={()=>setExpanded(p=>({...p,[l.id]:!isExp}))} style={{display:'block',marginTop:2,background:'none',border:'none',padding:0,color:'#007aff',fontSize:'.78rem',cursor:'pointer',fontWeight:600}}>{isExp?'접기':'펼치기'}</button>}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
