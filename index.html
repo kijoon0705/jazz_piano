@@ -84,6 +84,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .add-student-card:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
 .add-icon{font-size:2rem}
 .add-label{font-size:.85rem;font-weight:600}
+.enrollment-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:6px}
+.enrollment-badge.active{background:#e8f5e9;color:#2e7d32}
+.enrollment-badge.inactive{background:#fce4ec;color:#c62828}
+.enrollment-filter{display:flex;gap:6px;margin-bottom:14px}
+.enrollment-filter button{padding:5px 14px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.8rem;font-weight:600;color:#888;transition:all .15s}
+.enrollment-filter button.active-filter{border-color:#007aff;background:#007aff;color:#fff}
+.student-card.inactive-student{opacity:.55}
 
 /* Calendar grid */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
@@ -283,7 +290,7 @@ async function fsCreateStudent(name, email, password) {
   catch(e) { secondary = firebase.initializeApp(FIREBASE_CONFIG, 'secondary'); }
   const {user} = await secondary.auth().createUserWithEmailAndPassword(email, password);
   await db.collection('users').doc(user.uid).set({
-    name, email, role: 'student',
+    name, email, role: 'student', enrollmentStatus: '수강 중',
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   await secondary.auth().signOut();
@@ -814,8 +821,18 @@ function TeacherApp({user}) {
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(null);
   const [delConfirm, setDelConfirm] = useState(null);
+  const [enrollFilter, setEnrollFilter] = useState('전체');
 
   const deleteStudent = async s => { await fsDeleteStudent(s.id); setDelConfirm(null); if(selected?.id===s.id) setSelected(null); };
+  const toggleEnrollment = async (e, s) => {
+    e.stopPropagation();
+    const next = (s.enrollmentStatus === '수강 중단') ? '수강 중' : '수강 중단';
+    await db.collection('users').doc(s.id).update({enrollmentStatus: next});
+  };
+  const filteredStudents = students.filter(s => {
+    if (enrollFilter === '전체') return true;
+    return (s.enrollmentStatus || '수강 중') === enrollFilter;
+  });
 
   return (
     <div className="app">
@@ -843,20 +860,30 @@ function TeacherApp({user}) {
             <span className="card-title">👥 학생 목록</span>
             <button className="btn btn-primary btn-sm" onClick={()=>setAddModal(true)}>+ 학생 추가</button>
           </div>
+          <div className="enrollment-filter">
+            {['전체','수강 중','수강 중단'].map(f=>(
+              <button key={f} className={enrollFilter===f?'active-filter':''} onClick={()=>setEnrollFilter(f)}>{f}</button>
+            ))}
+          </div>
           {loading
             ? <div className="loading-wrap"><div className="spinner"/></div>
             : <div className="students-grid">
-                {students.map(s=>(
-                  <div key={s.id} className="student-card" onClick={()=>setSelected(s)}>
+                {filteredStudents.map(s=>{
+                  const isActive = (s.enrollmentStatus || '수강 중') === '수강 중';
+                  return (
+                  <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>setSelected(s)}>
                     <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
+                      <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
                       <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
                       <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
                     </div>
                     <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
                     <div className="s-name">{s.name}</div>
                     <div className="s-email">{s.email}</div>
+                    <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
                   </div>
-                ))}
+                  );
+                })}
                 <div className="student-card add-student-card" onClick={()=>setAddModal(true)}>
                   <div className="add-icon">+</div>
                   <div className="add-label">학생 추가</div>
