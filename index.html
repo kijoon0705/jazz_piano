@@ -287,6 +287,10 @@ const getLog = (logs, aid, ds) => logs.find(l => l.assignmentId===aid && l.date=
 const avatarColor = name => COLORS[(name||'?').charCodeAt(0) % COLORS.length];
 const avatarInitial = name => (name||'?')[0].toUpperCase();
 const weekStart = date => { const d=new Date(date); d.setDate(d.getDate()-d.getDay()); return d; };
+const fmtDateRange = (start, end) => {
+  const fmt = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); const dow=DAYS[new Date(Number(y),Number(m)-1,Number(d)).getDay()]; return `${m}.${d}(${dow})`; };
+  return `${fmt(start)} ~ ${fmt(end)}`;
+};
 
 const errMsg = code => ({
   'auth/user-not-found': '등록된 계정이 없습니다.',
@@ -800,6 +804,7 @@ function StatsView({assignments, logs, year, month}) {
             <div style={{width:12,height:12,borderRadius:'50%',background:ac,flexShrink:0}}/>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontWeight:700,fontSize:'.85rem'}}>{a.song}</div>
+              <div style={{fontSize:'.7rem',color:'#aaa',marginTop:1}}>{fmtDateRange(a.startDate,a.endDate)}</div>
               <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${a.rate}%`,background:ac}}/></div>
             </div>
             <div style={{textAlign:'right',flexShrink:0}}>
