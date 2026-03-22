@@ -462,10 +462,11 @@ function AddStudentModal({onClose}) {
 // ── Edit Student Modal ──
 function EditStudentModal({student, onClose}) {
   const [name, setName] = useState(student.name);
+  const [registeredAt, setRegisteredAt] = useState(student.registeredAt || '');
   const [loading, setLoading] = useState(false);
   const handle = async () => {
     setLoading(true);
-    await db.collection('users').doc(student.id).update({name});
+    await db.collection('users').doc(student.id).update({name, registeredAt});
     setLoading(false); onClose();
   };
   return (
@@ -474,6 +475,8 @@ function EditStudentModal({student, onClose}) {
         <button className="btn btn-primary" disabled={!name||loading} onClick={handle}>저장</button></>}>
       <div className="fg"><label className="flabel">이름</label>
         <input className="finput" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <div className="fg"><label className="flabel">최초 등록일</label>
+        <input className="finput" type="date" value={registeredAt} onChange={e=>setRegisteredAt(e.target.value)}/></div>
     </Modal>
   );
 }
@@ -751,7 +754,7 @@ function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
 }
 
 // ── Student View (shared between teacher-on-student and student-self) ──
-function StudentView({studentId, isTeacher}) {
+function StudentView({studentId, isTeacher, studentDoc}) {
   const {assignments, logs, loading} = useStudentData(studentId);
   const [view, setView] = useState('monthly');
   const [tab, setTab] = useState('calendar');
@@ -772,6 +775,11 @@ function StudentView({studentId, isTeacher}) {
 
   return (
     <div>
+      {studentDoc?.registeredAt && (
+        <div style={{textAlign:'right',fontSize:'.75rem',color:'#aaa',marginBottom:6,paddingRight:2}}>
+          📋 등록일 {studentDoc.registeredAt}
+        </div>
+      )}
       <div className="tab-bar">
         <button className={`tab-btn${tab==='calendar'?' active':''}`} onClick={()=>setTab('calendar')}>📅 캘린더</button>
         <button className={`tab-btn${tab==='assignments'?' active':''}`} onClick={()=>setTab('assignments')}>📝 숙제</button>
@@ -880,6 +888,7 @@ function TeacherApp({user}) {
                     <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
                     <div className="s-name">{s.name}</div>
                     <div className="s-email">{s.email}</div>
+                    {s.registeredAt && <div style={{fontSize:'.68rem',color:'#999',marginTop:3}}>등록일 {s.registeredAt}</div>}
                     <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
                   </div>
                   );
@@ -892,7 +901,7 @@ function TeacherApp({user}) {
           }
         </div>
       ) : (
-        <StudentView studentId={selected.id} isTeacher={true}/>
+        <StudentView studentId={selected.id} isTeacher={true} studentDoc={selected}/>
       )}
 
       {addModal&&<AddStudentModal onClose={()=>setAddModal(false)}/>}
@@ -913,7 +922,7 @@ function StudentApp({user, userDoc}) {
           <button className="btn btn-secondary btn-sm" onClick={()=>auth.signOut()}>로그아웃</button>
         </div>
       </div>
-      <StudentView studentId={user.uid} isTeacher={false}/>
+      <StudentView studentId={user.uid} isTeacher={false} studentDoc={userDoc}/>
     </div>
   );
 }
