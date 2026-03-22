@@ -986,7 +986,17 @@ function TeacherApp({user}) {
   const [delConfirm, setDelConfirm] = useState(null);
   const [enrollFilter, setEnrollFilter] = useState('전체');
 
-  const deleteStudent = async s => { await fsDeleteStudent(s.id); setDelConfirm(null); if(selected?.id===s.id) setSelected(null); };
+  useEffect(() => {
+    history.replaceState({view:'list'}, '');
+    const onPop = () => { setSelected(null); history.replaceState({view:'list'}, ''); };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const selectStudent = s => { history.pushState({view:'student'}, ''); setSelected(s); };
+  const goBackToList = () => { history.back(); };
+
+  const deleteStudent = async s => { await fsDeleteStudent(s.id); setDelConfirm(null); if(selected?.id===s.id) goBackToList(); };
   const toggleEnrollment = async (e, s) => {
     e.stopPropagation();
     const next = (s.enrollmentStatus === '수강 중단') ? '수강 중' : '수강 중단';
@@ -1002,7 +1012,7 @@ function TeacherApp({user}) {
       <div className="header">
         <div className="header-left">
           {selected
-            ? <><button className="back-btn" onClick={()=>setSelected(null)}>← 학생 목록</button>
+            ? <><button className="back-btn" onClick={goBackToList}>← 학생 목록</button>
                 <span className="breadcrumb-sep">›</span>
                 <span className="breadcrumb-name">
                   <span style={{display:'inline-block',width:20,height:20,borderRadius:'50%',background:avatarColor(selected.name),color:'#fff',fontSize:'.65rem',fontWeight:800,textAlign:'center',lineHeight:'20px',marginRight:6}}>{avatarInitial(selected.name)}</span>
@@ -1034,7 +1044,7 @@ function TeacherApp({user}) {
                 {filteredStudents.map(s=>{
                   const isActive = (s.enrollmentStatus || '수강 중') === '수강 중';
                   return (
-                  <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>setSelected(s)}>
+                  <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>selectStudent(s)}>
                     <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
                       <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
                       <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
