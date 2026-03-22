@@ -1180,19 +1180,22 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
   return (
     <Modal title={`${m}.${d}(${dow}) 수업`} onClose={onClose}>
       {dayLessons.length===0
-        ? <p style={{color:'#aaa',fontSize:'.85rem',padding:'16px 0',textAlign:'center'}}>이 날 등록된 수업이 없습니다.</p>
+        ? <p style={{color:'#aaa',fontSize:'.85rem',padding:'24px 0',textAlign:'center'}}>이 날 등록된 수업이 없습니다.</p>
         : dayLessons.map(l=>{
           const st=studentMap[l.studentId];
           const e=editing[l.id];
           const isSaving=saving[l.id];
+          const sTime=l.startAt?l.startAt.split('T')[1]:'';
+          const eTime=l.endAt?l.endAt.split('T')[1]:'';
           return (
-            <div key={l.id} style={{borderBottom:'1px solid #f0f0f0',paddingBottom:14,marginBottom:14}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{fontWeight:700,fontSize:'.95rem'}}>{st?.name||'?'}</span>
-                  <span className="lesson-session-badge">{l.month||1}개월/{l.session}회차</span>
+            <div key={l.id} style={{background:'#f8f9fb',borderRadius:12,padding:'14px 16px',marginBottom:10}}>
+              {/* 학생 정보 + 버튼 행 */}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+                  <span style={{fontWeight:700,fontSize:'1rem',whiteSpace:'nowrap'}}>{st?.name||'?'}</span>
+                  <span style={{display:'inline-flex',alignItems:'center',background:'#007aff',color:'#fff',borderRadius:20,fontSize:'.72rem',fontWeight:700,padding:'3px 10px',whiteSpace:'nowrap',flexShrink:0}}>{l.month||1}개월/{l.session}회차</span>
                 </div>
-                <div style={{display:'flex',gap:6}}>
+                <div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
                   {!e&&<button className="btn btn-secondary btn-sm" onClick={()=>startEdit(l)}>수정</button>}
                   <button className="btn btn-danger btn-sm" onClick={()=>setDelConf(l)}>삭제</button>
                 </div>
@@ -1200,20 +1203,23 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
               {e ? (
                 <div>
                   <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8}}>
-                    <input className="finput" type="time" value={e.sTime} onChange={ev=>setField(l.id,'sTime',ev.target.value)} style={{flex:1}}/>
-                    <span style={{color:'#aaa',flexShrink:0}}>~</span>
-                    <input className="finput" type="time" value={e.eTime} onChange={ev=>setField(l.id,'eTime',ev.target.value)} style={{flex:1}}/>
+                    <input className="finput" type="time" value={e.sTime} onChange={ev=>setField(l.id,'sTime',ev.target.value)} style={{flex:1,minWidth:0}}/>
+                    <span style={{color:'#bbb',flexShrink:0,fontWeight:500}}>~</span>
+                    <input className="finput" type="time" value={e.eTime} onChange={ev=>setField(l.id,'eTime',ev.target.value)} style={{flex:1,minWidth:0}}/>
                   </div>
-                  <textarea className="finput" rows={2} placeholder="메모" value={e.notes} onChange={ev=>setField(l.id,'notes',ev.target.value)} style={{width:'100%',resize:'vertical',marginBottom:8,fontFamily:'inherit'}}/>
+                  <textarea className="finput" rows={2} placeholder="메모" value={e.notes} onChange={ev=>setField(l.id,'notes',ev.target.value)} style={{width:'100%',resize:'vertical',marginBottom:8,fontFamily:'inherit',boxSizing:'border-box'}}/>
                   <div style={{display:'flex',gap:6,justifyContent:'flex-end'}}>
                     <button className="btn btn-secondary btn-sm" onClick={()=>cancelEdit(l.id)}>취소</button>
                     <button className="btn btn-primary btn-sm" disabled={isSaving} onClick={()=>save(l)}>{isSaving?'저장 중…':'저장'}</button>
                   </div>
                 </div>
               ) : (
-                <div style={{fontSize:'.85rem',color:'#555'}}>
-                  <div>🕐 {l.startAt?l.startAt.split('T')[1]:''} ~ {l.endAt?l.endAt.split('T')[1]:''}</div>
-                  {l.notes&&<div style={{marginTop:4,color:'#888',whiteSpace:'pre-wrap',lineHeight:1.5}}>💬 {l.notes}</div>}
+                <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6,fontSize:'.88rem',color:'#444',fontWeight:500}}>
+                    <span style={{color:'#007aff',fontSize:'.8rem'}}>●</span>
+                    <span>{sTime} ~ {eTime}</span>
+                  </div>
+                  {l.notes&&<div style={{fontSize:'.83rem',color:'#888',whiteSpace:'pre-wrap',lineHeight:1.5,paddingLeft:18}}>💬 {l.notes}</div>}
                 </div>
               )}
             </div>
