@@ -135,11 +135,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .wday-num{font-size:1rem;font-weight:700}
 .wday-num.today-b{background:#007aff;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:.85rem}
 .wday-num.sun-n{color:#ff3b30}.wday-num.sat-n{color:#007aff}
-.wtg-wrap{border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;background:#fff}
+.wtg-wrap{border:1px solid #e8e8e8;border-radius:12px;overflow-y:auto;max-height:620px;background:#fff}
 .wtg-header{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid #e8e8e8;background:#fff;position:sticky;top:0;z-index:2}
 .wtg-tz{font-size:.58rem;color:#bbb;display:flex;align-items:flex-end;justify-content:center;padding:6px 4px 8px;border-right:1px solid #e8e8e8}
 .wtg-hcell{text-align:center;padding:8px 4px 10px;border-left:1px solid #e8e8e8;cursor:pointer}
-.wtg-body{display:flex;overflow-y:auto;max-height:580px}
+.wtg-body{display:flex}
 .wtg-timecol{width:52px;flex-shrink:0;border-right:1px solid #e8e8e8}
 .wtg-timeslot{height:40px;display:flex;align-items:flex-start;padding:3px 6px 0;font-size:.62rem;color:#bbb;border-bottom:1px solid #f4f4f4;box-sizing:border-box}
 .wtg-daycols{flex:1;display:grid;grid-template-columns:repeat(7,1fr)}
@@ -1372,7 +1372,7 @@ function TeacherCalendar({students, lessons}) {
     const nowTop=now.getHours()*HOUR_H+(now.getMinutes()/60)*HOUR_H;
     const fmtHour=h=>{if(h===0)return'';if(h<12)return`AM ${h}시`;if(h===12)return'PM 12시';return`PM ${h-12}시`;};
     calView = (
-      <div className="wtg-wrap">
+      <div className="wtg-wrap" ref={wtgScrollRef}>
         <div className="wtg-header">
           <div className="wtg-tz">GMT+09</div>
           {days.map(({date,ds},i)=>{
@@ -1385,7 +1385,7 @@ function TeacherCalendar({students, lessons}) {
             );
           })}
         </div>
-        <div className="wtg-body" ref={wtgScrollRef}>
+        <div className="wtg-body">
           <div className="wtg-timecol">
             {Array.from({length:24},(_,h)=>(
               <div key={h} className="wtg-timeslot">{fmtHour(h)}</div>
