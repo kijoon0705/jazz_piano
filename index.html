@@ -1023,7 +1023,7 @@ function LessonCard({l, isTeacher, onEdit, onDel}) {
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
         <div>
           <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
-          <div className="lesson-time">🕐 {fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
+          <div className="lesson-time">🕐 {fmtLessonDt(l.startAt)} ~ {l.endAt?l.endAt.split('T')[1]:''}</div>
         </div>
         {isTeacher && (
           <div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
