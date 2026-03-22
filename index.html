@@ -767,7 +767,8 @@ const fmtLessonDt = iso => {
   if (!iso) return '';
   const [date, time] = iso.split('T');
   const [y, m, d] = date.split('-');
-  return `${y.slice(2)}.${m}.${d} ${time}`;
+  const dow = DAYS[new Date(Number(y), Number(m)-1, Number(d)).getDay()];
+  return `${y.slice(2)}.${m}.${d}(${dow}) ${time}`;
 };
 
 // ── Lesson Modal ──
