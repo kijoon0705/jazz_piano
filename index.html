@@ -1585,10 +1585,28 @@ function ConfigWarning() {
 }
 
 // ── Root App ──
+function BirthdayModal({onClose}) {
+  return (
+    <div className="overlay">
+      <div className="modal" style={{maxWidth:360,textAlign:'center'}}>
+        <div style={{fontSize:'2.4rem',marginBottom:12}}>🎂</div>
+        <div style={{fontWeight:800,fontSize:'1.05rem',marginBottom:16,lineHeight:1.5,color:'#1d1d1f'}}>
+          생일 축하드려요!
+        </div>
+        <div style={{fontSize:'.92rem',color:'#444',lineHeight:1.8,marginBottom:24,whiteSpace:'pre-line'}}>
+          {`모조 재즈 스튜디오 원장님의\n한번뿐인 2026년도 생일을 축하드립니다 :)\n\n올해에는 더 행복한 일들만 가득해서\n웃는 날이 더 많기를 바랍니다~`}
+        </div>
+        <button className="btn btn-primary" onClick={onClose} style={{width:'100%',justifyContent:'center',padding:'11px'}}>감사합니다 🎉</button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [authUser, setAuthUser] = useState(undefined);
   const [userDoc, setUserDoc] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
+  const [showBirthday, setShowBirthday] = useState(false);
 
   useEffect(() => {
     if (!isConfigured) return;
@@ -1596,6 +1614,10 @@ function App() {
       setUserLoading(true);
       setAuthUser(user);
       if (user) {
+        const today = new Date();
+        if (user.email === 'mojojazzpiano@naver.com' && today <= new Date('2026-03-31T23:59:59')) {
+          setShowBirthday(true);
+        }
         try {
           const doc = await db.collection('users').doc(user.uid).get();
           if (doc.exists) {
@@ -1642,8 +1664,12 @@ function App() {
     </div>
   );
 
-  if (userDoc.role === 'teacher') return <TeacherApp user={authUser}/>;
-  return <StudentApp user={authUser} userDoc={userDoc}/>;
+  return (
+    <>
+      {showBirthday && <BirthdayModal onClose={()=>setShowBirthday(false)}/>}
+      {userDoc.role === 'teacher' ? <TeacherApp user={authUser}/> : <StudentApp user={authUser} userDoc={userDoc}/>}
+    </>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
