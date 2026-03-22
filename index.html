@@ -760,6 +760,8 @@ function WeekCal({wStart, assignments, logs, lessons, onDay}) {
 function PracticeHeatmap({logs}) {
   const today=new Date();
   const curYear=today.getFullYear();
+  const wrapRef=useRef(null);
+  const [cs,setCs]=React.useState(11);
   const countMap={};
   logs.forEach(l=>{if(l.date&&l.date.startsWith(String(curYear)))countMap[l.date]=(countMap[l.date]||0)+(l.count||0);});
   const getColor=n=>{if(!n)return'#ebedf0';if(n<=2)return'#c6e48b';if(n<=4)return'#7bc96f';if(n<=7)return'#239a3b';return'#196127';};
@@ -773,23 +775,35 @@ function PracticeHeatmap({logs}) {
     for(let d=0;d<7;d++){
       const ds=cur.toISOString().split('T')[0];
       const inYear=cur.getFullYear()===curYear;
-      wk.push({date:ds,count:inYear?(countMap[ds]||0):null,inYear,month:cur.getMonth(),dow:cur.getDay()});
+      wk.push({date:ds,count:inYear?(countMap[ds]||0):null,inYear,month:cur.getMonth()});
       cur.setDate(cur.getDate()+1);
     }
     weeks.push(wk);
   }
+  const gap=2,dayLabelW=30;
+  useEffect(()=>{
+    if(!wrapRef.current)return;
+    const calc=()=>{
+      const w=wrapRef.current.clientWidth-dayLabelW-gap-28;
+      const size=Math.floor((w-(weeks.length-1)*gap)/weeks.length);
+      setCs(Math.max(7,size));
+    };
+    calc();
+    const ro=new ResizeObserver(calc);
+    ro.observe(wrapRef.current);
+    return()=>ro.disconnect();
+  },[weeks.length]);
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const cs=11,gap=2;
   return (
-    <div style={{background:'#fafafa',borderRadius:12,padding:'12px 14px',marginBottom:14,overflowX:'auto'}}>
+    <div ref={wrapRef} style={{background:'#fafafa',borderRadius:12,padding:'12px 14px',marginBottom:14}}>
       <div style={{fontWeight:700,fontSize:'.85rem',color:'#555',marginBottom:8}}>{curYear}년 연습 기록</div>
-      <div style={{display:'flex',gap:4,minWidth:'max-content'}}>
-        <div style={{display:'flex',flexDirection:'column',gap:gap,paddingTop:18}}>
+      <div style={{display:'flex',gap:gap}}>
+        <div style={{display:'flex',flexDirection:'column',gap,paddingTop:18,width:dayLabelW,flexShrink:0}}>
           {['','Mon','','Wed','','Fri',''].map((l,i)=>(
             <div key={i} style={{height:cs,fontSize:9,color:'#999',lineHeight:cs+'px',textAlign:'right',paddingRight:4}}>{l}</div>
           ))}
         </div>
-        <div>
+        <div style={{flex:1,overflow:'hidden'}}>
           <div style={{display:'flex',marginBottom:3,height:14}}>
             {weeks.map((wk,wi)=>{
               const first=wk.find(d=>d.inYear);
@@ -799,9 +813,9 @@ function PracticeHeatmap({logs}) {
               return <div key={wi} style={{width:cs+gap,flexShrink:0,fontSize:9,color:'#999',overflow:'visible',whiteSpace:'nowrap'}}>{show?MONTHS[dt.getMonth()]:''}</div>;
             })}
           </div>
-          <div style={{display:'flex',gap:gap}}>
+          <div style={{display:'flex',gap}}>
             {weeks.map((wk,wi)=>(
-              <div key={wi} style={{display:'flex',flexDirection:'column',gap:gap}}>
+              <div key={wi} style={{display:'flex',flexDirection:'column',gap}}>
                 {wk.map((day,di)=>(
                   <div key={di} title={day.inYear?`${day.date}: ${day.count}회`:''}
                     style={{width:cs,height:cs,borderRadius:2,background:day.inYear?getColor(day.count):'transparent'}}/>
