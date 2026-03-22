@@ -135,6 +135,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .wday-num{font-size:1rem;font-weight:700}
 .wday-num.today-b{background:#007aff;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:.85rem}
 .wday-num.sun-n{color:#ff3b30}.wday-num.sat-n{color:#007aff}
+.wtg-wrap{border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;background:#fff}
+.wtg-header{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid #e8e8e8;background:#fff;position:sticky;top:0;z-index:2}
+.wtg-tz{font-size:.58rem;color:#bbb;display:flex;align-items:flex-end;justify-content:center;padding:6px 4px 8px;border-right:1px solid #e8e8e8}
+.wtg-hcell{text-align:center;padding:8px 4px 10px;border-left:1px solid #e8e8e8;cursor:pointer}
+.wtg-body{display:flex;overflow-y:auto;max-height:580px}
+.wtg-timecol{width:52px;flex-shrink:0;border-right:1px solid #e8e8e8}
+.wtg-timeslot{height:60px;display:flex;align-items:flex-start;padding:3px 6px 0;font-size:.62rem;color:#bbb;border-bottom:1px solid #f4f4f4;box-sizing:border-box}
+.wtg-daycols{flex:1;display:grid;grid-template-columns:repeat(7,1fr)}
+.wtg-daycol{position:relative;border-left:1px solid #f0f0f0}
+.wtg-daycol.wtg-today{background:#f5f8ff}
+.wtg-slot{height:60px;border-bottom:1px solid #f4f4f4;box-sizing:border-box}
+.wtg-now-line{position:absolute;left:0;right:0;height:2px;background:#ff3b30;z-index:3;pointer-events:none}
+.wtg-now-dot{position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:#ff3b30}
+.wtg-lesson{position:absolute;left:2px;right:2px;border-radius:6px;padding:4px 6px;background:#007aff;color:#fff;font-size:.7rem;overflow:hidden;box-sizing:border-box;z-index:1;cursor:pointer}
 .pr-item{background:#fff;border-radius:8px;padding:7px;margin-bottom:5px;border-left:4px solid;box-shadow:0 1px 3px rgba(0,0,0,.07)}
 .pr-title{font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
 .pr-song{font-size:.65rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
@@ -221,6 +235,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
   .dot-row{display:flex}
   .week-grid{gap:3px}
   .week-day{padding:5px 3px;min-height:110px}
+  .wtg-header{grid-template-columns:40px repeat(7,1fr)}
+  .wtg-timecol{width:40px}
+  .wtg-timeslot{font-size:.55rem;padding:2px 4px 0}
+  .wtg-tz{font-size:.52rem}
+  .wtg-lesson{font-size:.62rem;padding:3px 4px}
   .modal{padding:16px;border-radius:16px}
   .frow{grid-template-columns:1fr}
   .nav-label{min-width:100px;font-size:.85rem}
@@ -1281,6 +1300,14 @@ function TeacherCalendar({students, lessons}) {
   const [view, setView] = useState('monthly');
   const [cur, setCur] = useState(new Date());
   const [dayModal, setDayModal] = React.useState(null);
+  const wtgScrollRef = useRef(null);
+  useEffect(()=>{
+    if(view==='weekly'&&wtgScrollRef.current){
+      const now=new Date();
+      const scrollTo=Math.max(0,(now.getHours()-1)*60);
+      wtgScrollRef.current.scrollTop=scrollTo;
+    }
+  },[view]);
   const studentMap = Object.fromEntries(students.map(s=>[s.id, s]));
   const ts = todayStr();
   const year = cur.getFullYear(), month = cur.getMonth(), ws = weekStart(cur);
@@ -1340,30 +1367,60 @@ function TeacherCalendar({students, lessons}) {
     );
   } else {
     const days=Array.from({length:7},(_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return{date:d,ds:toStr(d)};});
+    const HOUR_H=60;
+    const now=new Date();
+    const nowTop=now.getHours()*HOUR_H+(now.getMinutes()/60)*HOUR_H;
+    const fmtHour=h=>{if(h===0)return'';if(h<12)return`AM ${h}시`;if(h===12)return'PM 12시';return`PM ${h-12}시`;};
     calView = (
-      <div className="week-grid">
-        {days.map(({date,ds},i)=>{
-          const isT=ds===ts,dow=date.getDay();
-          const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(ds));
-          return (
-            <div key={ds} className={`week-day${isT?' today':''}`} onClick={()=>setDayModal(ds)} style={{cursor:'pointer'}}>
-              <div className="wday-hdr">
+      <div className="wtg-wrap">
+        <div className="wtg-header">
+          <div className="wtg-tz">GMT+09</div>
+          {days.map(({date,ds},i)=>{
+            const isT=ds===ts,dow=date.getDay();
+            return (
+              <div key={ds} className="wtg-hcell" onClick={()=>setDayModal(ds)}>
                 <div className={`wday-name${dow===0?' sun':dow===6?' sat':''}`}>{DAYS[dow]}</div>
                 <div className={`wday-num${isT?' today-b':dow===0?' sun-n':dow===6?' sat-n':''}`}>{date.getDate()}</div>
               </div>
-              {dayLessons.length===0&&<div className="wday-empty">—</div>}
-              {dayLessons.map(l=>{
-                const st=studentMap[l.studentId];
-                return (
-                  <div key={l.id} className="pr-item" style={{borderLeftColor:ASSIGN_DONE_COLOR,background:`${ASSIGN_DONE_COLOR}18`}}>
-                    <div className="pr-title" style={{color:ASSIGN_DONE_COLOR}}>{st?.name||'?'} — {l.month||1}개월 / {l.session}회차</div>
-                    <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {l.endAt?l.endAt.split('T')[1]:''}</div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <div className="wtg-body" ref={wtgScrollRef}>
+          <div className="wtg-timecol">
+            {Array.from({length:24},(_,h)=>(
+              <div key={h} className="wtg-timeslot">{fmtHour(h)}</div>
+            ))}
+          </div>
+          <div className="wtg-daycols">
+            {days.map(({date,ds},i)=>{
+              const isT=ds===ts,dow=date.getDay();
+              const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(ds));
+              return (
+                <div key={ds} className={`wtg-daycol${isT?' wtg-today':''}`} style={{height:24*HOUR_H}} onClick={()=>setDayModal(ds)}>
+                  {Array.from({length:24},(_,h)=>(
+                    <div key={h} className="wtg-slot"/>
+                  ))}
+                  {isT&&<div className="wtg-now-line" style={{top:nowTop}}><div className="wtg-now-dot"/></div>}
+                  {dayLessons.map(l=>{
+                    const st=studentMap[l.studentId];
+                    if(!l.startAt||!l.endAt) return null;
+                    const sT=l.startAt.split('T')[1], eT=l.endAt.split('T')[1];
+                    const [sh,sm]=sT.split(':').map(Number);
+                    const [eh,em]=eT.split(':').map(Number);
+                    const top=sh*HOUR_H+(sm/60)*HOUR_H;
+                    const height=Math.max(22,((eh*60+em)-(sh*60+sm))/60*HOUR_H);
+                    return (
+                      <div key={l.id} className="wtg-lesson" style={{top,height}} onClick={e=>{e.stopPropagation();setDayModal(ds);}}>
+                        <div style={{fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{st?.name||'?'}</div>
+                        {height>=36&&<div style={{opacity:.85,fontSize:'.63rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sT}~{eT}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   }
