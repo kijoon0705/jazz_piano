@@ -84,6 +84,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .add-student-card:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
 .add-icon{font-size:2rem}
 .add-label{font-size:.85rem;font-weight:600}
+/* Lesson tab */
+.lesson-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #007aff}
+.lesson-session-badge{display:inline-block;background:#007aff;color:#fff;border-radius:20px;font-size:.72rem;font-weight:700;padding:2px 10px;margin-bottom:8px}
+.lesson-time{font-size:.88rem;font-weight:600;color:#333}
+.lesson-notes{font-size:.78rem;color:#888;margin-top:8px;white-space:pre-wrap;line-height:1.6}
+.session-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.session-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.85rem;font-weight:700;color:#888;transition:all .15s}
+.session-btn.sel{border-color:#007aff;background:#007aff;color:#fff}
 .enrollment-badge{display:inline-block;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:6px}
 .enrollment-badge.active{background:#e8f5e9;color:#2e7d32}
 .enrollment-badge.inactive{background:#fce4ec;color:#c62828}
@@ -326,10 +334,23 @@ async function fsDeleteStudent(uid) {
   await db.collection('users').doc(uid).delete();
   const aSnap = await db.collection('assignments').where('studentId','==',uid).get();
   const lSnap = await db.collection('practiceLogs').where('studentId','==',uid).get();
+  const lesSnap = await db.collection('lessons').where('studentId','==',uid).get();
   const b = db.batch();
   aSnap.docs.forEach(d=>b.delete(d.ref));
   lSnap.docs.forEach(d=>b.delete(d.ref));
+  lesSnap.docs.forEach(d=>b.delete(d.ref));
   await b.commit();
+}
+
+async function fsSaveLesson(data, studentId) {
+  const {id, ...payload} = data;
+  payload.studentId = studentId;
+  if (id) { await db.collection('lessons').doc(id).update(payload); }
+  else { await db.collection('lessons').add({...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp()}); }
+}
+
+async function fsDeleteLesson(id) {
+  await db.collection('lessons').doc(id).delete();
 }
 
 // ── Hooks ──
@@ -359,6 +380,17 @@ function useStudents() {
     return unsub;
   }, []);
   return {students, loading};
+}
+
+function useLessons(studentId) {
+  const [lessons, setLessons] = useState([]);
+  useEffect(() => {
+    if (!studentId) return;
+    const unsub = db.collection('lessons').where('studentId','==',studentId)
+      .onSnapshot(s => setLessons(s.docs.map(d=>({id:d.id,...d.data()}))));
+    return unsub;
+  }, [studentId]);
+  return lessons;
 }
 
 // ── Modal wrapper ──
@@ -716,6 +748,103 @@ function StatsView({assignments, logs, year, month}) {
   );
 }
 
+// ── Lesson helpers ──
+const fmtLessonDt = iso => {
+  if (!iso) return '';
+  const [date, time] = iso.split('T');
+  const [y, m, d] = date.split('-');
+  return `${y.slice(2)}.${m}.${d} ${time}`;
+};
+
+// ── Lesson Modal ──
+function LessonModal({lesson, onSave, onClose}) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const todayISO = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const initSplit = dt => dt ? dt.split('T') : [todayISO, ''];
+  const [sDate, setSDate] = useState(() => initSplit(lesson?.startAt)[0]);
+  const [sTime, setSTime] = useState(() => initSplit(lesson?.startAt)[1]);
+  const [eDate, setEDate] = useState(() => initSplit(lesson?.endAt)[0]);
+  const [eTime, setETime] = useState(() => initSplit(lesson?.endAt)[1]);
+  const [session, setSession] = useState(lesson?.session || 1);
+  const [notes, setNotes] = useState(lesson?.notes || '');
+
+  const valid = sDate && sTime && eDate && eTime;
+  const handle = () => {
+    onSave({
+      id: lesson?.id,
+      startAt: `${sDate}T${sTime}`,
+      endAt: `${eDate}T${eTime}`,
+      session,
+      notes,
+    });
+  };
+  return (
+    <Modal title={lesson ? '수업 수정' : '수업 등록'} onClose={onClose}
+      footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
+        <button className="btn btn-primary" disabled={!valid} onClick={handle}>저장</button></>}>
+      <div className="frow">
+        <div className="fg"><label className="flabel">수업 시작일 *</label>
+          <input className="finput" type="date" value={sDate} onChange={e=>setSDate(e.target.value)}/></div>
+        <div className="fg"><label className="flabel">시작 시간 *</label>
+          <input className="finput" type="time" value={sTime} onChange={e=>setSTime(e.target.value)}/></div>
+      </div>
+      <div className="frow">
+        <div className="fg"><label className="flabel">수업 종료일 *</label>
+          <input className="finput" type="date" value={eDate} min={sDate} onChange={e=>setEDate(e.target.value)}/></div>
+        <div className="fg"><label className="flabel">종료 시간 *</label>
+          <input className="finput" type="time" value={eTime} onChange={e=>setETime(e.target.value)}/></div>
+      </div>
+      <div className="fg"><label className="flabel">회차</label>
+        <div className="session-toggle">
+          {[1,2,3,4,5,6,7,8].map(n=>(
+            <button key={n} className={`session-btn${session===n?' sel':''}`} onClick={()=>setSession(n)}>{n}</button>
+          ))}
+        </div>
+      </div>
+      <div className="fg"><label className="flabel">메모 ({notes.length}/500)</label>
+        <textarea className="finput" value={notes} maxLength={500} onChange={e=>setNotes(e.target.value)}
+          rows={4} style={{resize:'vertical',lineHeight:1.6}} placeholder="선택사항"/></div>
+    </Modal>
+  );
+}
+
+// ── Lessons Panel ──
+function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
+  const sorted = [...lessons].sort((a,b) => b.startAt.localeCompare(a.startAt));
+  return (
+    <div>
+      {isTeacher && (
+        <div className="card-header" style={{marginBottom:12}}>
+          <span className="card-title">🗓 수업 목록</span>
+          <button className="btn btn-primary btn-sm" onClick={onAdd}>+ 수업 등록</button>
+        </div>
+      )}
+      {!isTeacher && <div className="card-header" style={{marginBottom:12}}><span className="card-title">🗓 수업 목록</span></div>}
+      {sorted.length === 0
+        ? <div className="empty"><div className="empty-icon">🎹</div><div className="empty-txt">등록된 수업이 없습니다.</div></div>
+        : sorted.map(l => (
+          <div key={l.id} className="lesson-card">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <div>
+                <span className="lesson-session-badge">{l.session}회차</span>
+                <div className="lesson-time">🕐 {fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
+              </div>
+              {isTeacher && (
+                <div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
+                  <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(l)}>수정</button>
+                  <button className="btn btn-danger btn-sm" onClick={()=>onDel(l)}>삭제</button>
+                </div>
+              )}
+            </div>
+            {l.notes && <div className="lesson-notes">💬 {l.notes}</div>}
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
 // ── Assignments Panel ──
 const HAND_EMOJI = {'왼손':'🤚','오른손':'✋','양손':'👐'};
 
@@ -756,12 +885,15 @@ function AssignmentsPanel({assignments, onAdd, onEdit, onDel}) {
 // ── Student View (shared between teacher-on-student and student-self) ──
 function StudentView({studentId, isTeacher, studentDoc}) {
   const {assignments, logs, loading} = useStudentData(studentId);
+  const lessons = useLessons(studentId);
   const [view, setView] = useState('monthly');
   const [tab, setTab] = useState('calendar');
   const [cur, setCur] = useState(new Date());
   const [aModal, setAModal] = useState(null);
   const [pModal, setPModal] = useState(null);
   const [delConf, setDelConf] = useState(null);
+  const [lModal, setLModal] = useState(null);
+  const [lDelConf, setLDelConf] = useState(null);
 
   const year=cur.getFullYear(), month=cur.getMonth(), ws=weekStart(cur);
   const prev=()=>{const d=new Date(cur);view==='monthly'?d.setMonth(d.getMonth()-1):d.setDate(d.getDate()-7);setCur(d);};
@@ -770,6 +902,8 @@ function StudentView({studentId, isTeacher, studentDoc}) {
 
   const saveAssignment = async f => { await fsSaveAssignment(f, studentId); setAModal(null); };
   const deleteAssignment = async a => { await fsDeleteAssignment(a.id); setDelConf(null); };
+  const saveLesson = async f => { await fsSaveLesson(f, studentId); setLModal(null); };
+  const deleteLesson = async l => { await fsDeleteLesson(l.id); setLDelConf(null); };
 
   if(loading) return <div className="loading-wrap"><div className="spinner"/><div className="loading-txt">데이터 불러오는 중…</div></div>;
 
@@ -784,10 +918,11 @@ function StudentView({studentId, isTeacher, studentDoc}) {
         <button className={`tab-btn${tab==='calendar'?' active':''}`} onClick={()=>setTab('calendar')}>📅 캘린더</button>
         <button className={`tab-btn${tab==='assignments'?' active':''}`} onClick={()=>setTab('assignments')}>📝 숙제</button>
         <button className={`tab-btn${tab==='stats'?' active':''}`} onClick={()=>setTab('stats')}>📊 통계</button>
+        <button className={`tab-btn${tab==='lessons'?' active':''}`} onClick={()=>setTab('lessons')}>🗓 수업</button>
       </div>
 
       <div className="card">
-        {tab!=='assignments' && (
+        {tab!=='assignments' && tab!=='lessons' && (
           <div className="card-header">
             <div className="nav-controls">
               <button className="nav-btn" onClick={prev}>‹</button>
@@ -813,11 +948,17 @@ function StudentView({studentId, isTeacher, studentDoc}) {
           onEdit={a=>setAModal({mode:'edit',data:a})}
           onDel={a=>setDelConf(a)}/>}
         {tab==='stats' && <StatsView assignments={assignments} logs={logs} year={year} month={month}/>}
+        {tab==='lessons' && <LessonsPanel lessons={lessons} isTeacher={isTeacher}
+          onAdd={()=>setLModal({mode:'add',data:null})}
+          onEdit={l=>setLModal({mode:'edit',data:l})}
+          onDel={l=>setLDelConf(l)}/>}
       </div>
 
       {aModal&&<AssignmentModal assignment={aModal.data} onSave={saveAssignment} onClose={()=>setAModal(null)}/>}
       {pModal&&<PracticeModal dateStr={pModal} assignments={assignments} logs={logs} studentId={studentId} onClose={()=>setPModal(null)}/>}
       {delConf&&<ConfirmModal msg={`"${delConf.title}" 숙제와 모든 연습 기록을 삭제할까요?`} onConfirm={()=>deleteAssignment(delConf)} onClose={()=>setDelConf(null)}/>}
+      {lModal&&<LessonModal lesson={lModal.data} onSave={saveLesson} onClose={()=>setLModal(null)}/>}
+      {lDelConf&&<ConfirmModal msg={`${fmtLessonDt(lDelConf.startAt)} 수업을 삭제할까요?`} onConfirm={()=>deleteLesson(lDelConf)} onClose={()=>setLDelConf(null)}/>}
     </div>
   );
 }
