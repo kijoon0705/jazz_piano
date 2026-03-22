@@ -17,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .app{max-width:1200px;margin:0 auto;padding:16px}
 
 /* Login */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#843C34;padding:16px}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#843C34;padding:16px;position:relative;overflow:hidden}
 .login-card{background:#fff;border-radius:24px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .login-logo{text-align:center;font-size:3rem;margin-bottom:8px}
 .login-title{text-align:center;font-size:1.15rem;font-weight:800;margin-bottom:4px}
@@ -480,6 +480,21 @@ function LoginScreen() {
 
   return (
     <div className="login-wrap">
+      {/* Piano keys illustration */}
+      <svg viewBox="0 0 800 230" preserveAspectRatio="xMidYMax slice" style={{position:'absolute',bottom:0,left:0,width:'100%',height:'38%',pointerEvents:'none'}} xmlns="http://www.w3.org/2000/svg">
+        {/* White keys — 10 keys, step=80, width=76 */}
+        {[0,80,160,240,320,400,480,560,640,720].map((x,i)=>(
+          <rect key={i} x={x+2} y={i%3===0?8:i%3===1?14:5} width={76} height={230} rx={5} fill="#f0e6cc"/>
+        ))}
+        {/* Black keys — C# D# F# G# A# C# D# */}
+        {[
+          {x:50,h:138},{x:128,h:144},
+          {x:286,h:140},{x:364,h:136},{x:442,h:142},
+          {x:610,h:138},{x:688,h:144}
+        ].map((k,i)=>(
+          <rect key={i} x={k.x} y={0} width={44} height={k.h} rx={4} fill="#1a1a1a"/>
+        ))}
+      </svg>
       <div className="login-card">
         <div className="login-logo">
           <img src="./mojologo.jpg" alt="Mojo Jazz Studio" style={{width:100,height:100,borderRadius:'50%',objectFit:'cover',boxShadow:'0 4px 16px rgba(0,0,0,.15)'}}/>
