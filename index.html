@@ -877,9 +877,9 @@ function LessonModal({lesson, onSave, onClose}) {
         <input className="finput" type="time" value={eTime} onChange={e=>setETime(e.target.value)}/></div>
       <div className="fg"><label className="flabel">개월</label>
         <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>Math.max(1,v-1))} style={{width:32,padding:'4px 0',textAlign:'center'}}>−</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>Math.max(1,v-1))} style={{width:32,height:32,padding:0,justifyContent:'center'}}>−</button>
           <span style={{fontWeight:700,fontSize:'1rem',minWidth:40,textAlign:'center'}}>{month}개월</span>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>v+1)} style={{width:32,padding:'4px 0',textAlign:'center'}}>+</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>v+1)} style={{width:32,height:32,padding:0,justifyContent:'center'}}>+</button>
         </div>
       </div>
       <div className="fg"><label className="flabel">회차</label>
