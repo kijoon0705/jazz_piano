@@ -304,10 +304,24 @@ async function fsCreateStudent(name, email, password) {
   catch(e) { secondary = firebase.initializeApp(FIREBASE_CONFIG, 'secondary'); }
   const {user} = await secondary.auth().createUserWithEmailAndPassword(email, password);
   await db.collection('users').doc(user.uid).set({
-    name, email, role: 'student', enrollmentStatus: '수강 중',
+    name, email, password, role: 'student', enrollmentStatus: '수강 중',
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   await secondary.auth().signOut();
+}
+
+async function fsUpdateStudentAuth(student, newName, newEmail, newPassword, newRegisteredAt) {
+  let secondary;
+  try { secondary = firebase.app('secondary'); }
+  catch(e) { secondary = firebase.initializeApp(FIREBASE_CONFIG, 'secondary'); }
+  const {user} = await secondary.auth().signInWithEmailAndPassword(student.email, student.password);
+  if (newEmail && newEmail !== student.email) await user.updateEmail(newEmail);
+  if (newPassword && newPassword !== student.password) await user.updatePassword(newPassword);
+  await secondary.auth().signOut();
+  const update = {name: newName, registeredAt: newRegisteredAt};
+  if (newEmail) update.email = newEmail;
+  if (newPassword) update.password = newPassword;
+  await db.collection('users').doc(student.id).update(update);
 }
 
 async function fsSaveAssignment(data, studentId) {
@@ -507,22 +521,46 @@ function AddStudentModal({onClose}) {
   );
 }
 
+// ── Password Cell ──
+function PasswordCell({password}) {
+  const [show, setShow] = useState(false);
+  if (!password) return null;
+  return (
+    <div style={{fontSize:'.7rem',color:'#888',marginTop:3,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+      <span style={{fontFamily:'monospace'}}>{show ? password : '••••••'}</span>
+      <button onClick={e=>{e.stopPropagation();setShow(v=>!v);}} style={{border:'none',background:'none',cursor:'pointer',fontSize:'.7rem',padding:'0 2px',color:'#aaa'}}>{show?'🙈':'👁'}</button>
+    </div>
+  );
+}
+
 // ── Edit Student Modal ──
 function EditStudentModal({student, onClose}) {
   const [name, setName] = useState(student.name);
+  const [email, setEmail] = useState(student.email || '');
+  const [password, setPassword] = useState(student.password || '');
   const [registeredAt, setRegisteredAt] = useState(student.registeredAt || '');
   const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
   const handle = async () => {
-    setLoading(true);
-    await db.collection('users').doc(student.id).update({name, registeredAt});
-    setLoading(false); onClose();
+    if (!name || !email || !password) return;
+    setErr(''); setLoading(true);
+    try {
+      await fsUpdateStudentAuth(student, name, email, password, registeredAt);
+      onClose();
+    } catch(ex) { setErr(errMsg(ex.code)); }
+    setLoading(false);
   };
   return (
     <Modal title="학생 정보 수정" onClose={onClose}
       footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
-        <button className="btn btn-primary" disabled={!name||loading} onClick={handle}>저장</button></>}>
+        <button className="btn btn-primary" disabled={!name||!email||!password||loading} onClick={handle}>{loading?'저장 중…':'저장'}</button></>}>
+      {err && <div className="login-err" style={{marginBottom:12}}>{err}</div>}
       <div className="fg"><label className="flabel">이름</label>
         <input className="finput" value={name} onChange={e=>setName(e.target.value)}/></div>
+      <div className="fg"><label className="flabel">이메일</label>
+        <input className="finput" type="email" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+      <div className="fg"><label className="flabel">비밀번호 (6자 이상)</label>
+        <input className="finput" value={password} onChange={e=>setPassword(e.target.value)}/></div>
       <div className="fg"><label className="flabel">최초 등록일</label>
         <input className="finput" type="date" value={registeredAt} onChange={e=>setRegisteredAt(e.target.value)}/></div>
     </Modal>
@@ -1184,6 +1222,7 @@ function TeacherApp({user}) {
                           <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
                           <div className="s-name">{s.name}</div>
                           <div className="s-email">{s.email}</div>
+                          <PasswordCell password={s.password}/>
                           {s.registeredAt && <div style={{fontSize:'.68rem',color:'#999',marginTop:3}}>등록일 {s.registeredAt}</div>}
                           <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
                         </div>
