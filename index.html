@@ -732,7 +732,7 @@ function WeekCal({wStart, assignments, logs, lessons, onDay}) {
             {dayLessons.map(l=>(
               <div key={l.id} className="pr-item" style={{borderLeftColor:LESSON_COLOR,background:'#f0f5ff'}}>
                 <div className="pr-title" style={{color:LESSON_COLOR}}>🗓 수업 {l.month||1}개월 / {l.session}회차</div>
-                <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
+                <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {l.endAt?l.endAt.split('T')[1]:''}</div>
               </div>
             ))}
             {active.map(a=>{
@@ -1255,7 +1255,7 @@ function TeacherCalendar({students, lessons}) {
                 return (
                   <div key={l.id} className="pr-item" style={{borderLeftColor:ASSIGN_DONE_COLOR,background:`${ASSIGN_DONE_COLOR}18`}}>
                     <div className="pr-title" style={{color:ASSIGN_DONE_COLOR}}>{st?.name||'?'} — {l.month||1}개월 / {l.session}회차</div>
-                    <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {fmtLessonDt(l.endAt)}</div>
+                    <div className="pr-song">{fmtLessonDt(l.startAt)} ~ {l.endAt?l.endAt.split('T')[1]:''}</div>
                   </div>
                 );
               })}
