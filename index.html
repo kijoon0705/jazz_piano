@@ -888,7 +888,7 @@ function StatsView({assignments, logs, lessons, year, month}) {
     const build=(key,type,data,opts)=>{if(charts.current[key])charts.current[key].destroy();const c=refs.current[key];if(!c)return;charts.current[key]=new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});};
     if(stats.length>0){
       const autoColor=(_,i)=>COLORS[i%COLORS.length];
-      build('bar','bar',{labels:stats.map(a=>a.song),datasets:[{label:'달성률(%)',data:stats.map(a=>a.rate),backgroundColor:stats.map((_,i)=>autoColor(_,i)+'bb'),borderColor:stats.map(autoColor),borderWidth:2,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}});
+      build('bar','bar',{labels:stats.map(a=>a.song),datasets:[{label:'달성률(%)',data:stats.map(a=>a.rate),backgroundColor:'#007aff99',borderColor:'#007aff',borderWidth:2,borderRadius:6}]},{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}});
     }
     const dailyCounts=Array.from({length:dim},(_,i)=>{const ds=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;return mLogs.filter(l=>l.date===ds).reduce((s,l)=>s+(l.count||0),0);});
     build('line','line',{labels:Array.from({length:dim},(_,i)=>`${i+1}`),datasets:[{label:'연습 횟수',data:dailyCounts,borderColor:'#007aff',backgroundColor:'#007aff22',fill:true,tension:.3,pointRadius:3}]},{plugins:{legend:{display:false}},scales:{y:{min:0,ticks:{stepSize:1},grid:{color:'#f0f0f0'}},x:{grid:{display:false},ticks:{maxTicksLimit:15}}}});
@@ -917,7 +917,7 @@ function StatsView({assignments, logs, lessons, year, month}) {
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontWeight:700,fontSize:'.85rem'}}>{a.song}</div>
               <div style={{fontSize:'.7rem',color:'#aaa',marginTop:1}}>{fmtDateRange(a.startDate,a.endDate)}</div>
-              <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${a.rate}%`,background:ac}}/></div>
+              <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${a.rate}%`,background:dotColor}}/></div>
             </div>
             <div style={{textAlign:'right',flexShrink:0}}>
               <div style={{fontWeight:800,color:dotColor}}>{a.rate}%</div>
