@@ -86,10 +86,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .add-icon{font-size:2rem}
 .add-label{font-size:.85rem;font-weight:600}
 /* Lesson tab */
-.lesson-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #007aff}
-.lesson-session-badge{display:inline-flex;align-items:center;background:#007aff;color:#fff;border-radius:20px;font-size:.72rem;font-weight:700;padding:2px 10px}
-.lesson-time{font-size:.82rem;font-weight:500;color:#555;display:inline-flex;align-items:center}
-.lesson-notes{font-size:.78rem;color:#888;margin-top:8px;white-space:pre-wrap;line-height:1.6}
+.lesson-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #007aff;border-top:1px solid #eee;border-right:1px solid #eee;border-bottom:1px solid #eee;transition:border-color .2s,background .2s;cursor:default}
+.lesson-card.expanded{border-color:#f5a623;background:#fffdf5}
+.lesson-card.has-memo{cursor:pointer}
+.lesson-session-badge{display:inline-flex;align-items:center;background:#007aff;color:#fff;border-radius:20px;font-size:.72rem;font-weight:700;padding:3px 12px;white-space:nowrap}
+.lesson-time{font-size:.82rem;font-weight:500;color:#555;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.lesson-time-icon{color:#888;font-size:.8rem}
+.lesson-status-badge{font-size:.75rem;font-weight:600;color:#007aff;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.lesson-icon-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:.95rem;padding:2px 4px;line-height:1;display:flex;align-items:center;transition:color .15s}
+.lesson-icon-btn:hover{color:#555}
+.lesson-memo-area{margin-top:10px;padding-top:10px;border-top:1px solid #f0e8d0;font-size:.8rem;color:#666;white-space:pre-wrap;line-height:1.7}
 .session-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .session-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.85rem;font-weight:700;color:#888;transition:all .15s}
 .session-btn.sel{border-color:#007aff;background:#007aff;color:#fff}
@@ -1016,43 +1022,42 @@ function LessonModal({lesson, onSave, onClose}) {
 // ── Lesson Card ──
 function LessonCard({l, isTeacher, onEdit, onDel}) {
   const [expanded, setExpanded] = React.useState(false);
-  const [overflows, setOverflows] = React.useState(false);
-  const notesRef = useRef(null);
-  useEffect(()=>{
-    if(notesRef.current){
-      setOverflows(notesRef.current.scrollHeight > notesRef.current.clientHeight + 1);
-    }
-  },[l.notes]);
+  const hasMemo = !!(l.notes && l.notes.trim());
+
+  const datePart = l.startAt ? l.startAt.split('T')[0] : '';
+  const startTime = l.startAt ? l.startAt.split('T')[1] : '';
+  const endTime = l.endAt ? l.endAt.split('T')[1] : '';
+  let dateStr = '';
+  if (datePart) {
+    const [y, m, d] = datePart.split('-');
+    const dow = DAYS[new Date(Number(y), Number(m)-1, Number(d)).getDay()];
+    dateStr = `${y.slice(2)}.${m}.${d}(${dow})`;
+  }
+  const timeStr = startTime && endTime ? `${startTime} ~ ${endTime}` : startTime;
+
   return (
-    <div className="lesson-card">
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+    <div
+      className={`lesson-card${hasMemo?' has-memo':''}${expanded?' expanded':''}`}
+      onClick={() => hasMemo && setExpanded(v => !v)}
+    >
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',flex:1,minWidth:0}}>
           <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
-          <span className="lesson-time">{fmtLessonDt(l.startAt)} ~ {l.endAt?l.endAt.split('T')[1]:''}</span>
+          {dateStr && <span className="lesson-time"><span className="lesson-time-icon">🗓</span>{dateStr}</span>}
+          {timeStr && <span className="lesson-time"><span className="lesson-time-icon">🕐</span>{timeStr}</span>}
         </div>
-        {isTeacher && (
-          <div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
-            <button className="btn btn-secondary btn-sm" onClick={()=>onEdit(l)}>수정</button>
-            <button className="btn btn-danger btn-sm" onClick={()=>onDel(l)}>삭제</button>
-          </div>
-        )}
-      </div>
-      {l.notes && (
-        <div style={{marginTop:8}}>
-          <div ref={notesRef} className="lesson-notes" style={{
-            marginTop:0,
-            overflow:'hidden',
-            display:'-webkit-box',
-            WebkitLineClamp: expanded ? 'unset' : 1,
-            WebkitBoxOrient:'vertical',
-          }}>💬 {l.notes}</div>
-          {(overflows || expanded) && (
-            <button onClick={()=>setExpanded(v=>!v)} style={{
-              background:'none',border:'none',color:'#007aff',fontSize:'.75rem',
-              fontWeight:600,cursor:'pointer',padding:'2px 0',marginTop:2
-            }}>{expanded ? '접기 ▲' : '펼치기 ▼'}</button>
+        <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+          {hasMemo && <span className="lesson-status-badge"><span>🗓</span>예정</span>}
+          {isTeacher && (
+            <>
+              <button className="lesson-icon-btn" title="수정" onClick={e=>{e.stopPropagation();onEdit(l)}}>✎</button>
+              <button className="lesson-icon-btn" title="삭제" onClick={e=>{e.stopPropagation();onDel(l)}}>🗑</button>
+            </>
           )}
         </div>
+      </div>
+      {expanded && hasMemo && (
+        <div className="lesson-memo-area">💬 메모 : {l.notes}</div>
       )}
     </div>
   );
