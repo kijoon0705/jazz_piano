@@ -1125,14 +1125,15 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
 // ── Assignments Panel ──
 const HAND_EMOJI = {'왼손':'🤚🏻','오른손':'✋🏻','양손':'👐🏻'};
 
-function AssignmentCard({a, rate, isTeacher, onEdit, onDel}) {
+function AssignmentCard({a, rateData, isTeacher, onEdit, onDel}) {
   const [expanded, setExpanded] = React.useState(false);
   const hasMemo = !!(a.notes && a.notes.trim());
 
+  const rd = rateData || { rate: 0, actual: 0, tgt: 0, done: 0, active: 0 };
   const totalDays = a.startDate && a.endDate
     ? Math.round((new Date(a.endDate+'T12:00:00') - new Date(a.startDate+'T12:00:00')) / 86400000) + 1
     : 1;
-  const pct = rate || 0;
+  const pct = rd.rate;
   const pctColor = pct >= 80 ? '#34c759' : '#ffcc00';
   const borderColor = pct >= 80 ? '#34c759' : '#ffcc00';
 
@@ -1168,7 +1169,14 @@ function AssignmentCard({a, rate, isTeacher, onEdit, onDel}) {
             <div className="a-stat-box"><div className="a-stat-label">전체 기간</div><div className="a-stat-value">{totalDays}일</div></div>
             <div className="a-stat-box"><div className="a-stat-label">일일 반복</div><div className="a-stat-value">{a.dailyTarget}회</div></div>
             <div className="a-stat-box"><div className="a-stat-label">연습 손</div><div className="a-stat-value" style={{color:'#1d1d1f'}}>{a.hand||'-'}</div></div>
-            <div className="a-stat-box"><div className="a-stat-label">진행률</div><div className="a-stat-value" style={{color:pctColor}}>{pct}%</div></div>
+            <div className="a-stat-box"><div className="a-stat-label">완료 체크</div><div className="a-stat-value">{rd.done}일</div></div>
+          </div>
+          <div style={{marginTop:12}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
+              <span style={{fontWeight:800,fontSize:'.95rem',color:pctColor}}>{pct}%</span>
+              <span style={{fontSize:'.75rem',color:'#aaa'}}>{rd.actual}/{rd.tgt}회</span>
+            </div>
+            <div className="a-detail-pbar"><div className="a-detail-fill" style={{width:`${Math.min(pct,100)}%`,background:pctColor}}/></div>
           </div>
           {hasMemo && (
             <>
@@ -1183,24 +1191,25 @@ function AssignmentCard({a, rate, isTeacher, onEdit, onDel}) {
 }
 
 function AssignmentsPanel({assignments, logs, isTeacher, onAdd, onEdit, onDel}) {
-  // 통계탭과 동일한 방식으로 각 숙제의 진행률 계산 (전체 기간 기준)
-  const today = todayStr();
-  const rates = {};
+  // 통계탭과 동일한 방식으로 각 숙제의 진행률 계산
+  const rateData = {};
   assignments.forEach(a => {
-    let tgt = 0, actual = 0;
-    const end = a.endDate < today ? a.endDate : today;
-    if (a.startDate && a.startDate <= end) {
+    let tgt = 0, actual = 0, done = 0, active = 0;
+    if (a.startDate && a.endDate) {
       for (let d = 1; ; d++) {
         const dt = new Date(a.startDate + 'T12:00:00');
         dt.setDate(dt.getDate() + d - 1);
         const ds = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-        if (ds > end) break;
-        tgt += a.dailyTarget;
-        const lg = getLog(logs||[], a.id, ds);
-        if (lg) actual += lg.count || 0;
+        if (ds > a.endDate) break;
+        if (isActive(a, ds)) {
+          active++;
+          tgt += a.dailyTarget;
+          const lg = getLog(logs||[], a.id, ds);
+          if (lg) { actual += lg.count || 0; if (lg.completed) done++; }
+        }
       }
     }
-    rates[a.id] = tgt > 0 ? Math.min(100, Math.round(actual / tgt * 100)) : 0;
+    rateData[a.id] = { rate: tgt > 0 ? Math.round(actual / tgt * 100) : 0, actual, tgt, done, active };
   });
 
   return (
@@ -1211,7 +1220,7 @@ function AssignmentsPanel({assignments, logs, isTeacher, onAdd, onEdit, onDel}) 
       </div>
       {assignments.length===0
         ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">숙제를 추가해 보세요!</div></div>
-        : assignments.map(a => <AssignmentCard key={a.id} a={a} rate={rates[a.id]} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)
+        : assignments.map(a => <AssignmentCard key={a.id} a={a} rateData={rateData[a.id]} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)
       }
     </div>
   );
