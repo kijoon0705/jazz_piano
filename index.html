@@ -1709,7 +1709,7 @@ function StudentApp({user, userDoc}) {
       <div className="header">
         <span className="header-title">🎹 Mojo Jazz Studio</span>
         <div className="header-right">
-          <span className="user-name">{userDoc?.name || user.email}</span>
+          <span className="user-name">{userDoc?.name || user.email} 학생</span>
           <button className="btn btn-secondary btn-sm" onClick={()=>auth.signOut()}>로그아웃</button>
         </div>
       </div>
