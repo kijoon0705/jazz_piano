@@ -73,7 +73,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .nav-btn:hover{background:#e0e0e0}
 
 /* Students grid */
-.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .student-card{background:#fff;border-radius:16px;padding:20px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid transparent;text-align:left;position:relative}
 .student-card:hover{border-color:#007aff;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,122,255,.18)}
 .s-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
@@ -580,9 +580,8 @@ function PasswordCell({password}) {
   if (!password) return null;
   return (
     <div className="s-info-row">
-      <span className="s-icon">{show?'🙈':'👁'}</span>
+      <span className="s-icon" style={{cursor:'pointer'}} onClick={e=>{e.stopPropagation();setShow(v=>!v);}}>{show?'🙈':'👁'}</span>
       <span style={{fontFamily:'monospace'}}>{show ? password : '••••••'}</span>
-      <button onClick={e=>{e.stopPropagation();setShow(v=>!v);}} style={{border:'none',background:'none',cursor:'pointer',fontSize:'.65rem',padding:'0 2px',color:'#aaa'}}>{show?'숨기기':'보기'}</button>
     </div>
   );
 }
