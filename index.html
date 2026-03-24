@@ -1133,22 +1133,22 @@ function AssignmentCard({a, logs, isTeacher, onEdit, onDel}) {
   const totalDays = Math.max(1, Math.round((end - start) / 86400000) + 1);
   const completedDays = (logs||[]).filter(l => l.assignmentId === a.id && l.completed).length;
   const pct = Math.min(100, Math.round(completedDays / totalDays * 100));
-
-  const HAND_COLOR = {'왼손':'#ff3b30','오른손':'#ff9500','양손':'#af52de'};
-  const handColor = HAND_COLOR[a.hand] || '#888';
+  const pctColor = pct >= 80 ? '#34c759' : '#ffcc00';
+  const borderColor = pct >= 80 ? '#34c759' : '#ffcc00';
 
   return (
     <div
-      className={`a-card${hasMemo?' has-memo':''}${expanded?' expanded':''}`}
-      onClick={() => hasMemo && setExpanded(v => !v)}
+      className={`a-card has-memo${expanded?' expanded':''}`}
+      style={{borderLeftColor: borderColor, borderColor: expanded ? '#f5a623' : undefined}}
+      onClick={() => setExpanded(v => !v)}
     >
       <div className="a-card-header">
         <div style={{flex:1,minWidth:0}}>
           <div className="a-name">{a.song}</div>
           <div className="a-meta">
             <span><span style={{marginRight:3}}>🗓</span>{a.startDate} ~ {a.endDate}</span>
-            <span style={{color:'#007aff'}}>↻ 하루 {a.dailyTarget}회</span>
-            {a.hand && <span style={{color:handColor}}>{HAND_EMOJI[a.hand]||'👐'} {a.hand}</span>}
+            <span>↻ 하루 {a.dailyTarget}회</span>
+            {a.hand && <span>{HAND_EMOJI[a.hand]||'👐'} {a.hand}</span>}
           </div>
           {hasMemo && !expanded && (
             <div className="a-memo-preview">{a.notes}</div>
@@ -1161,17 +1161,21 @@ function AssignmentCard({a, logs, isTeacher, onEdit, onDel}) {
           </div>
         )}
       </div>
-      {expanded && hasMemo && (
+      {expanded && (
         <>
           <div className="a-divider"/>
           <div className="a-stats-grid">
             <div className="a-stat-box"><div className="a-stat-label">전체 기간</div><div className="a-stat-value">{totalDays}일</div></div>
             <div className="a-stat-box"><div className="a-stat-label">일일 반복</div><div className="a-stat-value">{a.dailyTarget}회</div></div>
-            <div className="a-stat-box"><div className="a-stat-label">연습 손</div><div className="a-stat-value" style={{color:handColor}}>{a.hand||'-'}</div></div>
-            <div className="a-stat-box"><div className="a-stat-label">진행률</div><div className="a-stat-value" style={{color:pct>=100?'#34c759':'#ff9500'}}>{pct}%</div></div>
+            <div className="a-stat-box"><div className="a-stat-label">연습 손</div><div className="a-stat-value" style={{color:'#1d1d1f'}}>{a.hand||'-'}</div></div>
+            <div className="a-stat-box"><div className="a-stat-label">진행률</div><div className="a-stat-value" style={{color:pctColor}}>{pct}%</div></div>
           </div>
-          <div className="a-divider"/>
-          <div className="a-memo-full"><span>📄</span><span>{a.notes}</span></div>
+          {hasMemo && (
+            <>
+              <div className="a-divider"/>
+              <div className="a-memo-full"><span>📄</span><span>{a.notes}</span></div>
+            </>
+          )}
         </>
       )}
     </div>
