@@ -305,6 +305,10 @@ const TEACHER_EMAILS = [
   "kijoon0705@naver.com",
   "mojojazzpiano@naver.com"
 ];
+const TEACHER_DISPLAY_NAMES = {
+  "kijoon0705@naver.com": "Admin",
+  "mojojazzpiano@naver.com": "조하은 원장님"
+};
 /* ════════════════════════════════════════════════════════════ */
 
 const isTeacherEmail = email => TEACHER_EMAILS.map(e=>e.toLowerCase()).includes((email||'').toLowerCase().trim());
@@ -1608,7 +1612,7 @@ function TeacherApp({user}) {
           }
         </div>
         <div className="header-right">
-          <span className="user-name">Admin</span>
+          <span className="user-name">{TEACHER_DISPLAY_NAMES[(user.email||'').toLowerCase()]||'선생님'}</span>
           <button className="btn btn-secondary btn-sm" onClick={()=>auth.signOut()}>로그아웃</button>
         </div>
       </div>
