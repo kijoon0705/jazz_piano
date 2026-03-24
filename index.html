@@ -73,15 +73,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .nav-btn:hover{background:#e0e0e0}
 
 /* Students grid */
-.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-.student-card{background:#fff;border-radius:16px;padding:22px 16px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid transparent;text-align:center;position:relative}
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.student-card{background:#fff;border-radius:16px;padding:20px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.07);border:2px solid transparent;text-align:left;position:relative}
 .student-card:hover{border-color:#007aff;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,122,255,.18)}
-.s-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;color:#fff;margin:0 auto 12px}
-.s-name{font-weight:700;font-size:.95rem;margin-bottom:4px}
-.s-email{font-size:.7rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.s-card-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .2s}
-.student-card:hover .s-card-actions{opacity:1}
-.add-student-card{border:2px dashed #d0d0d0;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:#aaa;transition:all .2s;min-height:140px}
+.s-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.s-avatar{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0}
+.s-name{font-weight:700;font-size:1rem}
+.s-info-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.s-info-row{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#666}
+.s-info-row .s-icon{width:18px;text-align:center;color:#aaa;font-size:.8rem;flex-shrink:0}
+.s-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f0f0f0}
+.s-card-actions{display:flex;gap:6px}
+.add-student-card{border:2px dashed #d0d0d0;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:#aaa;transition:all .2s;min-height:200px}
 .add-student-card:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
 .add-icon{font-size:2rem}
 .add-label{font-size:.85rem;font-weight:600}
@@ -576,9 +579,10 @@ function PasswordCell({password}) {
   const [show, setShow] = useState(false);
   if (!password) return null;
   return (
-    <div style={{fontSize:'.7rem',color:'#888',marginTop:3,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+    <div className="s-info-row">
+      <span className="s-icon">{show?'🙈':'👁'}</span>
       <span style={{fontFamily:'monospace'}}>{show ? password : '••••••'}</span>
-      <button onClick={e=>{e.stopPropagation();setShow(v=>!v);}} style={{border:'none',background:'none',cursor:'pointer',fontSize:'.7rem',padding:'0 2px',color:'#aaa'}}>{show?'🙈':'👁'}</button>
+      <button onClick={e=>{e.stopPropagation();setShow(v=>!v);}} style={{border:'none',background:'none',cursor:'pointer',fontSize:'.65rem',padding:'0 2px',color:'#aaa'}}>{show?'숨기기':'보기'}</button>
     </div>
   );
 }
@@ -1631,19 +1635,27 @@ function TeacherApp({user}) {
                 : <div className="students-grid">
                     {filteredStudents.map(s=>{
                       const isActive = (s.enrollmentStatus || '수강 중') === '수강 중';
+                      const lessonCnt = allLessons.filter(l=>l.studentId===s.id).length;
                       return (
                         <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>selectStudent(s)}>
-                          <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
-                            <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
-                            <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
-                            <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
+                          <div className="s-top">
+                            <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
+                            <div className="s-name">{s.name}</div>
                           </div>
-                          <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
-                          <div className="s-name">{s.name}</div>
-                          <div className="s-email">{s.email}</div>
-                          <PasswordCell password={s.password}/>
-                          {s.registeredAt && <div style={{fontSize:'.68rem',color:'#999',marginTop:3}}>등록일 {s.registeredAt}</div>}
-                          <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
+                          <div className="s-info-list">
+                            <div className="s-info-row"><span className="s-icon">✉️</span><span>{s.email}</span></div>
+                            <PasswordCell password={s.password}/>
+                            {s.registeredAt && <div className="s-info-row"><span className="s-icon">📅</span><span>등록일&nbsp; {s.registeredAt}</span></div>}
+                            <div className="s-info-row"><span className="s-icon">🎹</span><span>수업 횟수&nbsp; {lessonCnt}회</span></div>
+                          </div>
+                          <div className="s-bottom">
+                            <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
+                            <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
+                              <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
+                              <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
+                              <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
