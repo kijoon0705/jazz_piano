@@ -766,11 +766,15 @@ function MonthCal({year, month, assignments, logs, lessons, onDay}) {
               {isT?<span className="today-bubble">{c.day}</span>:c.day}
               {doneCount>0&&active.length>0&&<span style={{fontSize:'.55rem',color:'#34c759',fontWeight:800}}>✓{doneCount}</span>}
             </div>
-            {dayLessons.slice(0,1).map(l=>(
-              <div key={l.id} className="a-tag" style={{background:LESSON_COLOR}}>
-                <span className="a-tag-name">🗓 {l.month||1}개월/{l.session}회차 {l.startAt?l.startAt.split('T')[1]:''}{l.endAt?' ~ '+l.endAt.split('T')[1]:''}</span>
-              </div>
-            ))}
+            {dayLessons.slice(0,1).map(l=>{
+              const sT=l.startAt?l.startAt.split('T')[1]:'',eT=l.endAt?l.endAt.split('T')[1]:'';
+              const to12=t=>{if(!t)return'';const [h,m]=t.split(':').map(Number);const ap=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;return`${ap} ${h12}:${String(m).padStart(2,'0')}`;};
+              return (
+                <div key={l.id} className="a-tag" style={{background:LESSON_COLOR}}>
+                  <span className="a-tag-name">{sT&&eT?`${to12(sT)} ~ ${eT}`:''} {l.month||1}개월/{l.session}회차</span>
+                </div>
+              );
+            })}
             {shownAssign.map(a=>{
               const lg=getLog(logs,a.id,c.ds),cnt=lg?.count??0,done=lg?.completed;
               return <div key={a.id} className={`a-tag${done?' done':''}`} style={{background:done?ASSIGN_DONE_COLOR:ASSIGN_COLOR,color:done?'#fff':'#1d1d1f'}}><span className="a-tag-name">{HAND_EMOJI[a.hand]||''} {a.song}</span><span className="a-tag-cnt">{cnt}/{a.dailyTarget}</span></div>;
