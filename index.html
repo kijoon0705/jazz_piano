@@ -1047,7 +1047,6 @@ function LessonCard({l, isTeacher, onEdit, onDel}) {
           {timeStr && <span className="lesson-time"><span className="lesson-time-icon">🕐</span>{timeStr}</span>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
-          {hasMemo && <span className="lesson-status-badge"><span>🗓</span>예정</span>}
           {isTeacher && (
             <>
               <button className="lesson-icon-btn" title="수정" onClick={e=>{e.stopPropagation();onEdit(l)}}>✎</button>
