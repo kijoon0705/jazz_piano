@@ -1125,23 +1125,14 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
 // ── Assignments Panel ──
 const HAND_EMOJI = {'왼손':'🤚🏻','오른손':'✋🏻','양손':'👐🏻'};
 
-function AssignmentCard({a, logs, isTeacher, onEdit, onDel}) {
+function AssignmentCard({a, rate, isTeacher, onEdit, onDel}) {
   const [expanded, setExpanded] = React.useState(false);
   const hasMemo = !!(a.notes && a.notes.trim());
 
-  const today = todayStr();
-  const upperBound = a.endDate < today ? a.endDate : today;
-  const totalDays = a.startDate <= a.endDate
+  const totalDays = a.startDate && a.endDate
     ? Math.round((new Date(a.endDate+'T12:00:00') - new Date(a.startDate+'T12:00:00')) / 86400000) + 1
     : 1;
-  const activeDays = a.startDate <= upperBound
-    ? Math.round((new Date(upperBound+'T12:00:00') - new Date(a.startDate+'T12:00:00')) / 86400000) + 1
-    : 0;
-  const tgt = activeDays * a.dailyTarget;
-  const actual = (logs||[])
-    .filter(l => l.assignmentId === a.id && l.date >= a.startDate && l.date <= upperBound)
-    .reduce((s, l) => s + (l.count || 0), 0);
-  const pct = tgt > 0 ? Math.min(100, Math.round((actual / tgt) * 100)) : 0;
+  const pct = rate || 0;
   const pctColor = pct >= 80 ? '#34c759' : '#ffcc00';
   const borderColor = pct >= 80 ? '#34c759' : '#ffcc00';
 
@@ -1192,6 +1183,26 @@ function AssignmentCard({a, logs, isTeacher, onEdit, onDel}) {
 }
 
 function AssignmentsPanel({assignments, logs, isTeacher, onAdd, onEdit, onDel}) {
+  // 통계탭과 동일한 방식으로 각 숙제의 진행률 계산 (전체 기간 기준)
+  const today = todayStr();
+  const rates = {};
+  assignments.forEach(a => {
+    let tgt = 0, actual = 0;
+    const end = a.endDate < today ? a.endDate : today;
+    if (a.startDate && a.startDate <= end) {
+      for (let d = 1; ; d++) {
+        const dt = new Date(a.startDate + 'T12:00:00');
+        dt.setDate(dt.getDate() + d - 1);
+        const ds = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+        if (ds > end) break;
+        tgt += a.dailyTarget;
+        const lg = getLog(logs||[], a.id, ds);
+        if (lg) actual += lg.count || 0;
+      }
+    }
+    rates[a.id] = tgt > 0 ? Math.min(100, Math.round(actual / tgt * 100)) : 0;
+  });
+
   return (
     <div>
       <div className="card-header" style={{marginBottom:12}}>
@@ -1200,7 +1211,7 @@ function AssignmentsPanel({assignments, logs, isTeacher, onAdd, onEdit, onDel}) 
       </div>
       {assignments.length===0
         ? <div className="empty"><div className="empty-icon">🎵</div><div className="empty-txt">숙제를 추가해 보세요!</div></div>
-        : assignments.map(a => <AssignmentCard key={a.id} a={a} logs={logs} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)
+        : assignments.map(a => <AssignmentCard key={a.id} a={a} rate={rates[a.id]} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)
       }
     </div>
   );
