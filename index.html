@@ -1382,7 +1382,7 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
                       }} style={{flex:1,padding:'4px 0',fontSize:'.75rem',fontWeight:600,background:'#e8f0fe',color:'#3a7bd5',border:'none',borderRadius:8,cursor:'pointer'}}>+{min}m</button>
                     ))}
                   </div>
-                  <textarea className="finput" rows={2} placeholder="메모" value={e.notes} onChange={ev=>setField(l.id,'notes',ev.target.value)} style={{width:'100%',resize:'vertical',marginBottom:8,fontFamily:'inherit',boxSizing:'border-box'}}/>
+                  <textarea className="finput" rows={5} placeholder="메모" value={e.notes} onChange={ev=>setField(l.id,'notes',ev.target.value)} style={{width:'100%',resize:'vertical',marginBottom:8,fontFamily:'inherit',boxSizing:'border-box'}}/>
                   <div style={{display:'flex',gap:6,justifyContent:'flex-end'}}>
                     <button className="btn btn-secondary btn-sm" onClick={()=>cancelEdit(l.id)}>취소</button>
                     <button className="btn btn-primary btn-sm" disabled={isSaving} onClick={()=>save(l)}>{isSaving?'저장 중…':'저장'}</button>
