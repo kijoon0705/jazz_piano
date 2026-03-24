@@ -479,7 +479,7 @@ function useAllLessons() {
 }
 
 // ── Modal wrapper ──
-function Modal({title, onClose, children, footer}) {
+function Modal({title, onClose, children, footer, headerExtra}) {
   React.useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
@@ -489,8 +489,11 @@ function Modal({title, onClose, children, footer}) {
     <div className="overlay">
       <div className="modal">
         <div className="modal-hdr">
-          <span className="modal-title">{title}</span>
-          <button className="btn btn-secondary btn-sm" onClick={onClose}>✕</button>
+          <span className="modal-title" style={{flex:1,minWidth:0}}>{title}</span>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+            {headerExtra}
+            <button className="btn btn-secondary btn-sm" onClick={onClose}>✕</button>
+          </div>
         </div>
         {children}
         {footer && <div className="modal-footer">{footer}</div>}
@@ -1352,16 +1355,14 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
   const dow=DAYS[new Date(Number(y),Number(m)-1,Number(d)).getDay()];
   const fullDow=['일요일','월요일','화요일','수요일','목요일','금요일','토요일'][new Date(Number(y),Number(m)-1,Number(d)).getDay()];
   const headerTitle = (
-    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',width:'100%'}}>
-      <div>
-        <div style={{fontSize:'.78rem',color:'#888',marginBottom:2}}>{y}년 {Number(m)}월</div>
-        <div style={{fontSize:'1.3rem',fontWeight:800,color:'#1d1d1f'}}>{Number(d)}일 {fullDow}</div>
-      </div>
-      {dayLessons.length>0&&<div style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f5f5f7',borderRadius:10,padding:'6px 12px',fontSize:'.8rem',fontWeight:600,color:'#555',flexShrink:0}}>📅 {dayLessons.length}개 수업</div>}
+    <div>
+      <div style={{fontSize:'.78rem',color:'#888',marginBottom:2}}>{y}년 {Number(m)}월</div>
+      <div style={{fontSize:'1.3rem',fontWeight:800,color:'#1d1d1f'}}>{Number(d)}일 {fullDow}</div>
     </div>
   );
+  const headerRight = dayLessons.length>0 ? <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f5f5f7',borderRadius:10,padding:'6px 12px',fontSize:'.8rem',fontWeight:600,color:'#555',whiteSpace:'nowrap'}}>📅 {dayLessons.length}개 수업</div> : null;
   return (
-    <Modal title={headerTitle} onClose={onClose}>
+    <Modal title={headerTitle} onClose={onClose} headerExtra={headerRight}>
       {dayLessons.length===0
         ? <p style={{color:'#aaa',fontSize:'.85rem',padding:'24px 0',textAlign:'center'}}>이 날 등록된 수업이 없습니다.</p>
         : dayLessons.map(l=>{
