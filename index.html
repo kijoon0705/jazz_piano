@@ -1625,9 +1625,10 @@ function TeacherApp({user}) {
                 <button className="btn btn-primary btn-sm" onClick={()=>setAddModal(true)}>+ 학생 추가</button>
               </div>
               <div className="enrollment-filter">
-                {['전체','수강 중','수강 중단'].map(f=>(
-                  <button key={f} className={enrollFilter===f?'active-filter':''} onClick={()=>setEnrollFilter(f)}>{f}</button>
-                ))}
+                {['전체','수강 중','수강 중단'].map(f=>{
+                  const cnt = f==='전체' ? students.length : students.filter(s=>(s.enrollmentStatus||'수강 중')===f).length;
+                  return <button key={f} className={enrollFilter===f?'active-filter':''} onClick={()=>setEnrollFilter(f)}>{f} {cnt}</button>;
+                })}
               </div>
               {loading
                 ? <div className="loading-wrap"><div className="spinner"/></div>
