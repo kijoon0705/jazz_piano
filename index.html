@@ -1479,9 +1479,10 @@ function TeacherCalendar({students, lessons}) {
                 const sTime=l.startAt?l.startAt.split('T')[1]:'';
                 const eTime=l.endAt?l.endAt.split('T')[1]:'';
                 const to12=t=>{if(!t)return'';const [h,m]=t.split(':').map(Number);const ap=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;return `${ap} ${h12}:${String(m).padStart(2,'0')}`;};
+                const to12short=t=>{if(!t)return'';const [h,m]=t.split(':').map(Number);const h12=h===0?12:h>12?h-12:h;return`${h12}:${String(m).padStart(2,'0')}`;};
                 return (
                   <div key={l.id} className="a-tag" style={{background:LESSON_COLOR}}>
-                    <span className="a-tag-name">{st?.name||'?'} {sTime&&eTime?`${to12(sTime)} ~ ${eTime}`:''}</span>
+                    <span className="a-tag-name">{st?.name||'?'} {sTime&&eTime?`${to12(sTime)} ~ ${to12short(eTime)}`:''}</span>
                   </div>
                 );
               })}
