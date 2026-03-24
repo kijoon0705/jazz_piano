@@ -1129,6 +1129,8 @@ function AssignmentCard({a, logs, isTeacher, onEdit, onDel}) {
   const [expanded, setExpanded] = React.useState(false);
   const hasMemo = !!(a.notes && a.notes.trim());
 
+  const start = new Date(a.startDate), end = new Date(a.endDate);
+  const totalDays = Math.max(1, Math.round((end - start) / 86400000) + 1);
   const today = todayStr();
   let tgt = 0, actual = 0;
   for (let d = new Date(a.startDate); toStr(d) <= (a.endDate < today ? a.endDate : today); d.setDate(d.getDate()+1)) {
