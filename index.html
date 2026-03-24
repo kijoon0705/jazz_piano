@@ -1726,19 +1726,73 @@ function ConfigWarning() {
 
 // ── Root App ──
 function BirthdayModal({onClose}) {
+  const canvasRef = React.useRef(null);
+  const fireConfetti = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) { onClose(); return; }
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.display = 'block';
+    const colors = ['#ff3b30','#ff9500','#ffcc00','#34c759','#007aff','#af52de','#ff2d55','#5ac8fa'];
+    const particles = [];
+    for (let i = 0; i < 150; i++) {
+      particles.push({
+        x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+        y: canvas.height / 2,
+        vx: (Math.random() - 0.5) * 16,
+        vy: Math.random() * -18 - 4,
+        w: Math.random() * 8 + 4,
+        h: Math.random() * 6 + 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * 360,
+        rv: (Math.random() - 0.5) * 12,
+        gravity: 0.35 + Math.random() * 0.15,
+        opacity: 1
+      });
+    }
+    let frame = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.vy += p.gravity;
+        p.y += p.vy;
+        p.rot += p.rv;
+        if (frame > 40) p.opacity = Math.max(0, p.opacity - 0.02);
+        if (p.opacity <= 0) return;
+        alive = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      frame++;
+      if (alive && frame < 120) requestAnimationFrame(animate);
+      else { canvas.style.display = 'none'; onClose(); }
+    };
+    animate();
+  };
   return (
-    <div className="overlay">
-      <div className="modal" style={{maxWidth:360,textAlign:'center'}}>
-        <div style={{fontSize:'2.4rem',marginBottom:12}}>🎂</div>
-        <div style={{fontWeight:800,fontSize:'1.05rem',marginBottom:16,lineHeight:1.5,color:'#1d1d1f'}}>
-          생일 축하드려요!
+    <>
+      <canvas ref={canvasRef} style={{position:'fixed',inset:0,zIndex:1002,pointerEvents:'none',display:'none'}}/>
+      <div className="overlay" style={{zIndex:1001}}>
+        <div className="modal" style={{maxWidth:360,textAlign:'center'}}>
+          <div style={{fontSize:'2.4rem',marginBottom:12}}>🎂</div>
+          <div style={{fontWeight:800,fontSize:'1.05rem',marginBottom:16,lineHeight:1.5,color:'#1d1d1f'}}>
+            생일 축하드려요!
+          </div>
+          <div style={{fontSize:'.92rem',color:'#444',lineHeight:1.8,marginBottom:24,whiteSpace:'pre-line'}}>
+            {`해피 조조의 한번뿐인\n2026년도 생일을 축하드립니다 :)\n\n올해에는 더 행복한 일들만 가득해서\n웃는 날이 더 많기를 바라며~\n\nPS. PT는 꼭 성공하길! 🤣🤣`}
+          </div>
+          <button className="btn btn-primary" onClick={fireConfetti} style={{width:'100%',justifyContent:'center',padding:'11px'}}>생.일.선.물. 🎉</button>
         </div>
-        <div style={{fontSize:'.92rem',color:'#444',lineHeight:1.8,marginBottom:24,whiteSpace:'pre-line'}}>
-          {`해피 조조의 한번뿐인\n2026년도 생일을 축하드립니다 :)\n\n올해에는 더 행복한 일들만 가득해서\n웃는 날이 더 많기를 바라며~\n\nPS. PT는 꼭 성공하길! 🤣🤣`}
-        </div>
-        <button className="btn btn-primary" onClick={onClose} style={{width:'100%',justifyContent:'center',padding:'11px'}}>생.일.선.물. 🎉</button>
       </div>
-    </div>
+    </>
   );
 }
 
