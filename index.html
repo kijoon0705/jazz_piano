@@ -1614,8 +1614,7 @@ function TeacherApp({user}) {
             ? <><button className="back-btn" onClick={goBackToList}>← 학생 목록</button>
                 <span className="breadcrumb-sep">›</span>
                 <span className="breadcrumb-name">
-                  <span style={{display:'inline-block',width:20,height:20,borderRadius:'50%',background:avatarColor(selected.name),color:'#fff',fontSize:'.65rem',fontWeight:800,textAlign:'center',lineHeight:'20px',marginRight:6}}>{avatarInitial(selected.name)}</span>
-                  {selected.name}
+                  {selected.name} 학생
                 </span></>
             : <span className="header-title">🎹 Mojo Jazz Studio</span>
           }
