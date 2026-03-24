@@ -1140,7 +1140,7 @@ function AssignmentCard({a, rateData, isTeacher, onEdit, onDel}) {
   return (
     <div
       className={`a-card has-memo${expanded?' expanded':''}`}
-      style={{borderLeftColor: borderColor, borderColor: expanded ? borderColor : '#eee'}}
+      style={expanded ? {borderColor: borderColor} : {borderTopColor:'#eee',borderRightColor:'#eee',borderBottomColor:'#eee',borderLeftColor:borderColor}}
       onClick={() => setExpanded(v => !v)}
     >
       <div className="a-card-header">
