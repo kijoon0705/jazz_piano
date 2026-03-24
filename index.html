@@ -178,6 +178,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .modal-title{font-size:1.1rem;font-weight:700}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.day-modal-icon-btn{width:32px;height:32px;border-radius:8px;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.day-modal-icon-btn:hover{background:#f0f0f0;border-color:#ccc;transform:scale(1.08)}
 
 /* Form */
 .fg{margin-bottom:14px}
@@ -1357,8 +1359,8 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
                   <span style={{display:'inline-flex',alignItems:'center',background:'#007aff',color:'#fff',borderRadius:20,fontSize:'.72rem',fontWeight:700,padding:'3px 10px',whiteSpace:'nowrap',flexShrink:0}}>{l.month||1}개월/{l.session}회차</span>
                 </div>
                 {!e&&<div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}} onClick={ev=>ev.stopPropagation()}>
-                  <button onClick={()=>startEdit(l)} style={{width:32,height:32,borderRadius:8,border:'1.5px solid #e0e0e0',background:'#fff',cursor:'pointer',fontSize:'.9rem',display:'flex',alignItems:'center',justifyContent:'center'}}>✏️</button>
-                  <button onClick={()=>setDelConf(l)} style={{width:32,height:32,borderRadius:8,border:'1.5px solid #e0e0e0',background:'#fff',cursor:'pointer',fontSize:'.9rem',display:'flex',alignItems:'center',justifyContent:'center'}}>🗑</button>
+                  <button className="day-modal-icon-btn" onClick={()=>startEdit(l)}>✏️</button>
+                  <button className="day-modal-icon-btn" onClick={()=>setDelConf(l)}>🗑</button>
                 </div>}
               </div>
               {e ? (
