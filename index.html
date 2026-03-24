@@ -1359,12 +1359,15 @@ function TeacherCalendar({students, lessons}) {
                 const sTime=l.startAt?l.startAt.split('T')[1]:'';
                 const eTime=l.endAt?l.endAt.split('T')[1]:'';
                 return (
-                  <div key={l.id} className="a-tag" style={{background:ASSIGN_DONE_COLOR}}>
+                  <div key={l.id} className="a-tag" style={{background:LESSON_COLOR}}>
                     <span className="a-tag-name">🗓 {st?.name||'?'} {l.month||1}개월/{l.session}회차 {sTime&&eTime?`${sTime}~${eTime}`:''}</span>
                   </div>
                 );
               })}
               {dayLessons.length>3&&<div className="more-lbl">+{dayLessons.length-3}</div>}
+              <div className="dot-row">
+                {dayLessons.slice(0,5).map(l=><div key={l.id} className="dot" style={{background:LESSON_COLOR}}/>)}
+              </div>
             </div>
           );
         })}
