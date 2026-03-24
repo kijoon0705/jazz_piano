@@ -79,11 +79,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .s-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .s-avatar{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff;flex-shrink:0}
 .s-name{font-weight:700;font-size:1rem}
-.s-info-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.s-info-row{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#666}
+.s-info-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;overflow:hidden}
+.s-info-row{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#666;min-width:0}
+.s-info-row>span:not(.s-icon){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .s-info-row .s-icon{width:18px;text-align:center;color:#aaa;font-size:.8rem;flex-shrink:0}
-.s-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f0f0f0}
-.s-card-actions{display:flex;gap:6px}
+.s-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid #f0f0f0;gap:8px;flex-wrap:nowrap}
+.s-card-actions{display:flex;gap:6px;flex-shrink:0}
 .add-student-card{border:2px dashed #d0d0d0;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:#aaa;transition:all .2s;min-height:200px}
 .add-student-card:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
 .add-icon{font-size:2rem}
