@@ -36,8 +36,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .header-left{display:flex;align-items:center;gap:10px;min-width:0}
 .header-title{font-size:1.1rem;font-weight:800;white-space:nowrap}
 .header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.back-btn{display:flex;align-items:center;gap:4px;background:none;border:none;color:#007aff;font-weight:700;font-size:.9rem;cursor:pointer;padding:6px 10px;border-radius:8px;transition:background .2s}
-.back-btn:hover{background:#f0f5ff}
+.back-btn{display:flex;align-items:center;gap:4px;background:#f0f5ff;border:1px solid #d0ddf0;color:#007aff;font-weight:700;font-size:.85rem;cursor:pointer;padding:6px 14px;border-radius:10px;transition:background .2s,border-color .2s}
+.back-btn:hover{background:#dce8fb;border-color:#b0c4e8}
 .breadcrumb-sep{color:#ccc;font-size:.9rem}
 .breadcrumb-name{font-weight:700;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .user-name{font-size:.82rem;color:#888;font-weight:600}
@@ -1612,7 +1612,6 @@ function TeacherApp({user}) {
         <div className="header-left">
           {selected
             ? <><button className="back-btn" onClick={goBackToList}>← 학생 목록</button>
-                <span className="breadcrumb-sep">›</span>
                 <span className="breadcrumb-name">
                   {selected.name} 학생
                 </span></>
