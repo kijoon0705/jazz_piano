@@ -1356,9 +1356,9 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
                   <span style={{fontWeight:700,fontSize:'1rem',whiteSpace:'nowrap'}}>{st?.name||'?'}</span>
                   <span style={{display:'inline-flex',alignItems:'center',background:'#007aff',color:'#fff',borderRadius:20,fontSize:'.72rem',fontWeight:700,padding:'3px 10px',whiteSpace:'nowrap',flexShrink:0}}>{l.month||1}개월/{l.session}회차</span>
                 </div>
-                {!e&&<div style={{display:'flex',gap:8,flexShrink:0,marginLeft:8}} onClick={ev=>ev.stopPropagation()}>
-                  <button onClick={()=>startEdit(l)} style={{background:'none',border:'none',cursor:'pointer',fontSize:'1rem',color:'#bbb',padding:0}}>✏️</button>
-                  <button onClick={()=>setDelConf(l)} style={{background:'none',border:'none',cursor:'pointer',fontSize:'1rem',color:'#bbb',padding:0}}>🗑</button>
+                {!e&&<div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}} onClick={ev=>ev.stopPropagation()}>
+                  <button onClick={()=>startEdit(l)} style={{width:32,height:32,borderRadius:8,border:'1.5px solid #e0e0e0',background:'#fff',cursor:'pointer',fontSize:'.9rem',display:'flex',alignItems:'center',justifyContent:'center'}}>✏️</button>
+                  <button onClick={()=>setDelConf(l)} style={{width:32,height:32,borderRadius:8,border:'1.5px solid #e0e0e0',background:'#fff',cursor:'pointer',fontSize:'.9rem',display:'flex',alignItems:'center',justifyContent:'center'}}>🗑</button>
                 </div>}
               </div>
               {e ? (
