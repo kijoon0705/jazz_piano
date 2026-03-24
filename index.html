@@ -349,15 +349,15 @@ const errMsg = code => ({
 }[code] || '오류가 발생했습니다: ' + code);
 
 // ── Firestore helpers ──
-async function fsCreateStudent(name, email, password) {
+async function fsCreateStudent(name, email, password, registeredAt) {
   let secondary;
   try { secondary = firebase.app('secondary'); }
   catch(e) { secondary = firebase.initializeApp(FIREBASE_CONFIG, 'secondary'); }
   const {user} = await secondary.auth().createUserWithEmailAndPassword(email, password);
-  await db.collection('users').doc(user.uid).set({
-    name, email, password, role: 'student', enrollmentStatus: '수강 중',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  const data = {name, email, password, role: 'student', enrollmentStatus: '수강 중',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()};
+  if (registeredAt) data.registeredAt = registeredAt;
+  await db.collection('users').doc(user.uid).set(data);
   await secondary.auth().signOut();
 }
 
@@ -549,13 +549,14 @@ function AddStudentModal({onClose}) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
+  const [regDate, setRegDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   const valid = name && email && pw.length >= 6;
 
   const handle = async () => {
     setErr(''); setLoading(true);
-    try { await fsCreateStudent(name, email, pw); onClose(); }
+    try { await fsCreateStudent(name, email, pw, regDate||null); onClose(); }
     catch(ex) { setErr(errMsg(ex.code)); }
     setLoading(false);
   };
@@ -573,6 +574,8 @@ function AddStudentModal({onClose}) {
         <input className="finput" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="student@example.com"/></div>
       <div className="fg"><label className="flabel">비밀번호 * (6자 이상)</label>
         <input className="finput" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="학생이 사용할 비밀번호"/></div>
+      <div className="fg"><label className="flabel">등록일 (선택)</label>
+        <input className="finput" type="date" value={regDate} onChange={e=>setRegDate(e.target.value)}/></div>
     </Modal>
   );
 }
