@@ -691,6 +691,11 @@ function PracticeModal({dateStr, assignments, logs, studentId, onClose}) {
   }));
   const [saving, setSaving] = useState(false);
   const upd = (i,k,v) => setLs(p=>p.map((x,j)=>j===i?{...x,[k]:v}:x));
+  const updCount = (i, val) => {
+    const a = active[i];
+    const clamped = Math.min(a.dailyTarget, Math.max(0, val));
+    setLs(p => p.map((x,j) => j===i ? {...x, count:clamped, completed:clamped>=a.dailyTarget} : x));
+  };
   const dt = new Date(dateStr+'T00:00:00');
   const lbl = `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})`;
 
@@ -717,13 +722,9 @@ function PracticeModal({dateStr, assignments, logs, studentId, onClose}) {
               </div>
               <div className="cnt-ctrl">
                 <div className="cnt-btns">
-                  <button className="cnt-btn" onClick={()=>upd(i,'count',Math.max(0,l.count-1))}>−</button>
+                  <button className="cnt-btn" onClick={()=>updCount(i,l.count-1)}>−</button>
                   <span className="cnt-val">{l.count}</span>
-                  <button className="cnt-btn" onClick={()=>upd(i,'count',l.count+1)}>+</button>
-                </div>
-                <div style={{display:'flex',alignItems:'center',gap:5}}>
-                  <button className={`chk-btn${l.completed?' on':''}`} onClick={()=>upd(i,'completed',!l.completed)}>{l.completed?'✓':''}</button>
-                  <span style={{fontSize:'.65rem',color:'#aaa'}}>완료</span>
+                  <button className="cnt-btn" onClick={()=>updCount(i,l.count+1)} disabled={l.count>=a.dailyTarget}>+</button>
                 </div>
               </div>
             </div>
