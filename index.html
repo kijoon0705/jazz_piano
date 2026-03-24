@@ -96,6 +96,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .lesson-icon-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:.95rem;padding:2px 4px;line-height:1;display:flex;align-items:center;transition:color .15s}
 .lesson-icon-btn:hover{color:#555}
 .lesson-memo-area{margin-top:10px;padding-top:10px;border-top:1px solid #f0e8d0;font-size:.8rem;color:#666;white-space:pre-wrap;line-height:1.7}
+.lesson-group{margin-bottom:20px}
+.lesson-group-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.lesson-group-badge{background:#007aff;color:#fff;border-radius:20px;font-size:.78rem;font-weight:700;padding:4px 14px;white-space:nowrap;flex-shrink:0}
+.lesson-group-line{flex:1;height:1px;background:#e8e8e8}
+.lesson-group-count{font-size:.75rem;color:#bbb;font-weight:600;flex-shrink:0}
 .session-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .session-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.85rem;font-weight:700;color:#888;transition:all .15s}
 .session-btn.sel{border-color:#007aff;background:#007aff;color:#fff}
@@ -1064,7 +1069,25 @@ function LessonCard({l, isTeacher, onEdit, onDel}) {
 
 // ── Lessons Panel ──
 function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
-  const sorted = [...lessons].sort((a,b) => b.startAt.localeCompare(a.startAt));
+  if (lessons.length === 0) {
+    return (
+      <div>
+        {isTeacher && (
+          <div className="card-header" style={{marginBottom:12}}>
+            <span className="card-title"><span>🗓</span><span>수업 목록</span></span>
+            <button className="btn btn-primary btn-sm" onClick={onAdd}>+ 수업 등록</button>
+          </div>
+        )}
+        {!isTeacher && <div className="card-header" style={{marginBottom:12}}><span className="card-title"><span>🗓</span><span>수업 목록</span></span></div>}
+        <div className="empty"><div className="empty-icon">🎹</div><div className="empty-txt">등록된 수업이 없습니다.</div></div>
+      </div>
+    );
+  }
+  // 개월차별 그룹핑, 그룹 내 회차 내림차순
+  const groups = {};
+  lessons.forEach(l => { const m = l.month || 1; if (!groups[m]) groups[m] = []; groups[m].push(l); });
+  const sortedMonths = Object.keys(groups).map(Number).sort((a,b) => b - a);
+  sortedMonths.forEach(m => groups[m].sort((a,b) => b.session - a.session));
   return (
     <div>
       {isTeacher && (
@@ -1074,10 +1097,16 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
         </div>
       )}
       {!isTeacher && <div className="card-header" style={{marginBottom:12}}><span className="card-title"><span>🗓</span><span>수업 목록</span></span></div>}
-      {sorted.length === 0
-        ? <div className="empty"><div className="empty-icon">🎹</div><div className="empty-txt">등록된 수업이 없습니다.</div></div>
-        : sorted.map(l => <LessonCard key={l.id} l={l} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)
-      }
+      {sortedMonths.map(m => (
+        <div key={m} className="lesson-group">
+          <div className="lesson-group-header">
+            <span className="lesson-group-badge">{m}개월차</span>
+            <div className="lesson-group-line"/>
+            <span className="lesson-group-count">{groups[m].length}회</span>
+          </div>
+          {groups[m].map(l => <LessonCard key={l.id} l={l} isTeacher={isTeacher} onEdit={onEdit} onDel={onDel}/>)}
+        </div>
+      ))}
     </div>
   );
 }
