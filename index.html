@@ -36,10 +36,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .header-left{display:flex;align-items:center;gap:10px;min-width:0}
 .header-title{font-size:1.1rem;font-weight:800;white-space:nowrap}
 .header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.back-btn{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid transparent;color:#007aff;font-weight:700;font-size:.85rem;cursor:pointer;padding:6px 12px;border-radius:10px;transition:background .2s,border-color .2s;line-height:1}
+.back-btn{display:inline-flex;align-items:center;background:transparent;border:1px solid transparent;color:#007aff;font-weight:700;font-size:.85rem;cursor:pointer;padding:6px 12px;border-radius:10px;transition:background .2s,border-color .2s;line-height:normal;vertical-align:middle}
 .back-btn:hover{background:#f0f5ff;border-color:#d0ddf0}
-.back-btn .back-arrow{font-size:.85rem;display:block;transform:translateY(1px)}
-.back-btn .back-label{display:block}
 .breadcrumb-sep{color:#ccc;font-size:.9rem}
 .breadcrumb-reg{font-size:.75rem;color:#aaa;font-weight:500;white-space:nowrap}
 .breadcrumb-name{font-weight:700;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1609,7 +1607,7 @@ function TeacherApp({user}) {
       <div className="header">
         <div className="header-left">
           {selected
-            ? <><button className="back-btn" onClick={goBackToList}><span className="back-arrow">←</span><span className="back-label">학생 목록</span></button>
+            ? <><button className="back-btn" onClick={goBackToList}>← 학생 목록</button>
                 <span className="breadcrumb-name">{selected.name} 학생</span>
                 {selected.registeredAt && <span className="breadcrumb-reg">등록일 {selected.registeredAt}</span>}</>
             : <span className="header-title">🎹 Mojo Jazz Studio</span>
