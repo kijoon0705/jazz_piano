@@ -1600,7 +1600,7 @@ function TeacherApp({user}) {
   const filteredStudents = students.filter(s => {
     if (enrollFilter === '전체') return true;
     return (s.enrollmentStatus || '수강 중') === enrollFilter;
-  });
+  }).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
   return (
     <div className="app">
