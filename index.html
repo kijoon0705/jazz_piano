@@ -1499,7 +1499,7 @@ function DayLessonsModal({dateStr, lessons, studentMap, students, onClose}) {
       <div style={{fontSize:'1.3rem',fontWeight:800,color:'#1d1d1f'}}>{Number(d)}일 {fullDow}</div>
     </div>
   );
-  const headerRight = dayLessons.length>0 ? <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f5f5f7',borderRadius:10,padding:'6px 12px',fontSize:'.8rem',fontWeight:600,color:'#555',whiteSpace:'nowrap'}}>📅 {dayLessons.length}개 수업</div> : null;
+  const headerRight = dayLessons.length>0 ? <div style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f5f5f7',borderRadius:10,padding:'6px 12px',fontSize:'.8rem',fontWeight:600,color:'#555',whiteSpace:'nowrap'}}><span style={{fontSize:'.85rem',lineHeight:1}}>📅</span> {dayLessons.length}개 수업</div> : null;
   return (
     <Modal title={headerTitle} onClose={onClose} headerExtra={headerRight}>
       {dayLessons.length===0
