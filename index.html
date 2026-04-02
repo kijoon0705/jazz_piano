@@ -125,7 +125,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .session-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .session-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;cursor:pointer;font-size:.85rem;font-weight:700;color:#888;transition:all .15s}
 .session-btn.sel{border-color:#007aff;background:#007aff;color:#fff}
-.teacher-tabs{display:flex;gap:0;border-bottom:2px solid #f0f0f0;margin-bottom:16px}
+.teacher-tabs{display:flex;gap:0;border-bottom:2px solid #f0f0f0;margin-bottom:16px;align-items:center}
+.teacher-tabs-left{display:flex;gap:0;flex:1}
+.teacher-tabs-right{flex-shrink:0;margin-left:auto}
 .teacher-tab{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:.9rem;font-weight:600;color:#aaa;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
 .teacher-tab.active{color:#007aff;border-bottom-color:#007aff}
 
@@ -1946,9 +1948,13 @@ function TeacherApp({user}) {
       ) : (
         <>
           <div className="teacher-tabs">
-            <button className={`teacher-tab${mainTab==='calendar'?' active':''}`} onClick={()=>setMainTab('calendar')}>📅 캘린더</button>
-            <button className={`teacher-tab${mainTab==='students'?' active':''}`} onClick={()=>setMainTab('students')}>👥 학생 목록</button>
-            <button className={`teacher-tab${mainTab==='updates'?' active':''}`} onClick={()=>setMainTab('updates')}>📢 업데이트</button>
+            <div className="teacher-tabs-left">
+              <button className={`teacher-tab${mainTab==='calendar'?' active':''}`} onClick={()=>setMainTab('calendar')}>📅 캘린더</button>
+              <button className={`teacher-tab${mainTab==='students'?' active':''}`} onClick={()=>setMainTab('students')}>👥 학생 목록</button>
+            </div>
+            <div className="teacher-tabs-right">
+              <button className={`teacher-tab${mainTab==='updates'?' active':''}`} onClick={()=>setMainTab('updates')}>📢 업데이트</button>
+            </div>
           </div>
 
           {mainTab==='students' && (
