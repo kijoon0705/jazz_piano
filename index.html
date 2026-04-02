@@ -88,13 +88,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .s-card-actions{display:flex;gap:6px;flex-shrink:0}
 .add-student-card{border:2px dashed #d0d0d0;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:#aaa;transition:all .2s;min-height:200px}
 .add-student-card:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
+/* Student list */
+.student-list{display:flex;flex-direction:column;gap:8px}
+.student-list-header{display:flex;align-items:center;padding:8px 16px;font-size:.75rem;font-weight:600;color:#999;border-bottom:1px solid #eee}
+.student-list-row{display:flex;align-items:center;background:#fff;border-radius:12px;padding:12px 16px;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06);border:1.5px solid transparent}
+.student-list-row:hover{border-color:#007aff;background:#f8fbff;box-shadow:0 4px 12px rgba(0,122,255,.12)}
+.student-list-row.inactive-student{opacity:.55}
+.sl-col{display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:.82rem;padding:0 6px;flex:1;min-width:0}
+.sl-status{flex:0.7}
+.sl-name{flex:0.8;font-weight:700}
+.sl-email{flex:1.4;color:#555}
+.sl-pw{flex:1;color:#555}
+.sl-date{flex:1;color:#888;font-size:.78rem}
+.sl-lessons{flex:0.5;color:#555}
+.sl-actions{flex:1;display:flex;gap:6px}
+.student-list-add{display:flex;align-items:center;justify-content:center;background:#fafafa;border:1.5px dashed #d0d0d0;border-radius:12px;padding:12px 16px;cursor:pointer;color:#aaa;font-size:.85rem;font-weight:600;transition:all .2s;gap:6px}
+.student-list-add:hover{border-color:#007aff;color:#007aff;background:#f0f5ff}
 .add-icon{font-size:2rem}
 .add-label{font-size:.85rem;font-weight:600}
 /* Lesson tab */
 .lesson-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #007aff;border-top:1px solid #eee;border-right:1px solid #eee;border-bottom:1px solid #eee;transition:border-color .2s,background .2s;cursor:default}
 .lesson-card.expanded{border-color:#f5a623;background:#fffdf5}
 .lesson-card.has-memo{cursor:pointer}
-.lesson-session-badge{display:inline-flex;align-items:center;background:#007aff;color:#fff;border-radius:20px;font-size:.72rem;font-weight:700;padding:3px 12px;white-space:nowrap}
+.lesson-session-badge{display:inline-flex;align-items:center;background:#f0f0f0;color:#555;border-radius:20px;font-size:.72rem;font-weight:700;padding:3px 12px;white-space:nowrap}
 .lesson-time{font-size:.82rem;font-weight:500;color:#555;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .lesson-time-icon{color:#888;font-size:.8rem}
 .lesson-status-badge{font-size:.75rem;font-weight:600;color:#007aff;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
@@ -304,11 +320,11 @@ const FIREBASE_CONFIG = {
 // 선생님 이메일 목록 (이 이메일로 가입하면 선생님 권한)
 const TEACHER_EMAILS = [
   "kijoon0705@naver.com",
-  "mojojazzpiano@naver.com"
+  "mojo@naver.com"
 ];
 const TEACHER_DISPLAY_NAMES = {
   "kijoon0705@naver.com": "Admin",
-  "mojojazzpiano@naver.com": "조하은 원장님"
+  "mojo@naver.com": "조하은 원장님"
 };
 /* ════════════════════════════════════════════════════════════ */
 
@@ -327,6 +343,10 @@ const COLORS = ['#007aff','#ff3b30','#34c759','#ff9500','#af52de','#ff2d55','#5a
 const ASSIGN_COLOR = '#ffcc00';
 const ASSIGN_DONE_COLOR = '#34c759';
 const LESSON_COLOR = '#007aff';
+const STUDIO_EVENTS = [
+  { date: '2026-04-24', time: '19:00', label: '🎉 모조파티' },
+  { date: '2026-06-27', time: '15:30', label: '🎵 모조 정기 연주회' },
+];
 const DAYS = ['일','월','화','수','목','금','토'];
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
@@ -593,9 +613,9 @@ function PasswordCell({password}) {
   const [show, setShow] = useState(false);
   if (!password) return null;
   return (
-    <div className="s-info-row">
-      <span className="s-icon" style={{cursor:'pointer'}} onClick={e=>{e.stopPropagation();setShow(v=>!v);}}>{show?'🙈':'👁'}</span>
-      <span style={{fontFamily:'monospace'}}>{show ? password : '••••••'}</span>
+    <div style={{display:'flex',alignItems:'center',gap:6}}>
+      <span style={{cursor:'pointer',fontSize:'.8rem'}} onClick={e=>{e.stopPropagation();setShow(v=>!v);}}>{show?'🙈':'👁'}</span>
+      <span style={{fontFamily:'monospace',fontSize:'.82rem'}}>{show ? password : '••••••'}</span>
     </div>
   );
 }
@@ -700,7 +720,7 @@ function AssignmentModal({assignment, onSave, onClose}) {
 }
 
 // ── Practice Log Modal ──
-function PracticeModal({dateStr, assignments, logs, studentId, onClose}) {
+function PracticeModal({dateStr, assignments, logs, lessons, studentId, onClose}) {
   const active = assignments.filter(a=>isActive(a,dateStr));
   const [ls, setLs] = useState(() => active.map(a => {
     const ex=getLog(logs,a.id,dateStr);
@@ -726,6 +746,28 @@ function PracticeModal({dateStr, assignments, logs, studentId, onClose}) {
     <Modal title={`연습 기록 — ${lbl}`} onClose={onClose}
       footer={<><button className="btn btn-secondary" onClick={onClose}>취소</button>
         <button className="btn btn-primary" onClick={save} disabled={saving}>{saving?'저장 중…':'저장'}</button></>}>
+      {(()=>{
+        const dayLessons = (lessons||[]).filter(l => l.startAt && l.startAt.split('T')[0] === dateStr);
+        if (dayLessons.length > 0) {
+          const to12=t=>{if(!t)return'';const [h,m]=t.split(':').map(Number);const ap=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;return`${ap} ${h12}:${String(m).padStart(2,'0')}`;};
+          const to12s=t=>{if(!t)return'';const [h,m]=t.split(':').map(Number);const h12=h===0?12:h>12?h-12:h;return`${h12}:${String(m).padStart(2,'0')}`;};
+          return <div style={{marginBottom:16}}>
+            <div style={{fontSize:'.82rem',fontWeight:700,color:'#007aff',marginBottom:8}}>🗓 수업</div>
+            {dayLessons.map(l=>{
+              const sT=l.startAt?l.startAt.split('T')[1]:'';
+              const eT=l.endAt?l.endAt.split('T')[1]:'';
+              return <div key={l.id} style={{background:'#f0f5ff',borderRadius:10,padding:'10px 14px',marginBottom:6,borderLeft:'4px solid #007aff'}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                  <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
+                  {sT&&eT&&<span style={{fontSize:'.82rem',color:'#555'}}>🕐 {to12(sT)} ~ {to12s(eT)}</span>}
+                </div>
+                {l.notes&&l.notes.trim()&&<div style={{fontSize:'.78rem',color:'#666',marginTop:6}}>💬 {l.notes}</div>}
+              </div>;
+            })}
+          </div>;
+        }
+        return null;
+      })()}
       {active.length===0
         ? <div className="empty"><div className="empty-icon">📭</div><div className="empty-txt">이 날 할당된 숙제가 없습니다</div></div>
         : active.map((a,i)=>{
@@ -765,8 +807,9 @@ function MonthCal({year, month, assignments, logs, lessons, onDay}) {
       {cells.map((c,idx)=>{
         const dow=idx%7,isT=c.ds===ts,active=assignments.filter(a=>isActive(a,c.ds));
         const dayLessons=(lessons||[]).filter(l=>l.startAt&&l.startAt.startsWith(c.ds));
+        const dayEvents=STUDIO_EVENTS.filter(e=>e.date===c.ds);
         const doneCount=active.filter(a=>getLog(logs,a.id,c.ds)?.completed).length;
-        const totalItems=active.length+dayLessons.length;
+        const totalItems=active.length+dayLessons.length+dayEvents.length;
         const shownAssign=active.slice(0,Math.max(0,3-dayLessons.slice(0,1).length));
         return (
           <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`} onClick={()=>onDay(c.ds)}>
@@ -774,6 +817,9 @@ function MonthCal({year, month, assignments, logs, lessons, onDay}) {
               {isT?<span className="today-bubble">{c.day}</span>:c.day}
               {doneCount>0&&active.length>0&&<span style={{fontSize:'.55rem',color:'#34c759',fontWeight:800}}>✓{doneCount}</span>}
             </div>
+            {dayEvents.map((ev,i)=>(
+              <div key={'ev'+i} className="a-tag" style={{background:'#d64b8a'}}><span className="a-tag-name">{ev.label}</span></div>
+            ))}
             {dayLessons.slice(0,1).map(l=>{
               const sT=l.startAt?l.startAt.split('T')[1]:'',eT=l.endAt?l.endAt.split('T')[1]:'';
               const to12=t=>{if(!t)return'';const [h,m]=t.split(':').map(Number);const ap=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;return`${ap} ${h12}:${String(m).padStart(2,'0')}`;};
@@ -808,13 +854,20 @@ function WeekCal({wStart, assignments, logs, lessons, onDay}) {
       {days.map(({date,ds},i)=>{
         const isT=ds===ts,dow=date.getDay(),active=assignments.filter(a=>isActive(a,ds));
         const dayLessons=(lessons||[]).filter(l=>l.startAt&&l.startAt.startsWith(ds));
+        const dayEvents=STUDIO_EVENTS.filter(e=>e.date===ds);
         return (
           <div key={ds} className={`week-day${isT?' today':''}`} onClick={()=>onDay(ds)}>
             <div className="wday-hdr">
               <div className={`wday-name${dow===0?' sun':dow===6?' sat':''}`}>{DAYS[dow]}</div>
               <div className={`wday-num${isT?' today-b':dow===0?' sun-n':dow===6?' sat-n':''}`}>{date.getDate()}</div>
             </div>
-            {active.length===0&&dayLessons.length===0&&<div className="wday-empty">—</div>}
+            {active.length===0&&dayLessons.length===0&&dayEvents.length===0&&<div className="wday-empty">—</div>}
+            {dayEvents.map((ev,i)=>(
+              <div key={'ev'+i} className="pr-item" style={{borderLeftColor:'#d64b8a',background:'#fffdf5'}}>
+                <div className="pr-title" style={{color:'#d64b8a'}}>{ev.label}</div>
+                <div className="pr-song">PM {(()=>{const[h,m]=ev.time.split(':').map(Number);const h12=h>12?h-12:h;return`${h12}:${String(m).padStart(2,'0')}`;})()}~</div>
+              </div>
+            ))}
             {dayLessons.map(l=>(
               <div key={l.id} className="pr-item" style={{borderLeftColor:LESSON_COLOR,background:'#f0f5ff'}}>
                 <div className="pr-title" style={{color:LESSON_COLOR}}>🗓 수업 {l.month||1}개월 / {l.session}회차</div>
@@ -989,7 +1042,7 @@ const fmtLessonDt = iso => {
 };
 
 // ── Lesson Modal ──
-function LessonModal({lesson, onSave, onClose}) {
+function LessonModal({lesson, lessons: allLessons, onSave, onClose}) {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const todayISO = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
@@ -1006,6 +1059,14 @@ function LessonModal({lesson, onSave, onClose}) {
     const [h, m] = sTime.split(':').map(Number);
     const total = h * 60 + m + mins;
     setETime(`${pad(Math.floor(total/60)%24)}:${pad(total%60)}`);
+  };
+
+  const continueFromLast = () => {
+    const sorted = (allLessons||[]).filter(l=>l.startAt).sort((a,b)=>b.startAt.localeCompare(a.startAt));
+    if (sorted.length === 0) return;
+    const last = sorted[0];
+    setMonth(last.month || 1);
+    setSession((last.session || 1) + 1);
   };
 
   const valid = sDate && sTime && eTime;
@@ -1030,24 +1091,30 @@ function LessonModal({lesson, onSave, onClose}) {
       <div className="fg"><label className="flabel">종료 시간 빠른 설정</label>
         <div style={{display:'flex',gap:6,marginTop:4}}>
           {[15,30,45,60].map(m=>(
-            <button key={m} className="btn btn-secondary btn-sm" onClick={()=>addMins(m)} style={{flex:1}}>+{m}분</button>
+            <button key={m} className="btn btn-secondary btn-sm" onClick={()=>addMins(m)} style={{flex:1,justifyContent:'center'}}>+{m}분</button>
           ))}
         </div>
       </div>
       <div className="fg"><label className="flabel">종료 시간 *</label>
         <input className="finput" type="time" value={eTime} onChange={e=>setETime(e.target.value)}/></div>
-      <div className="fg"><label className="flabel">개월</label>
-        <div style={{display:'flex',alignItems:'center',gap:10,marginTop:4}}>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>Math.max(1,v-1))} style={{width:32,height:32,padding:0,justifyContent:'center'}}>−</button>
-          <span style={{fontWeight:700,fontSize:'1rem',minWidth:40,textAlign:'center'}}>{month}개월</span>
-          <button className="btn btn-secondary btn-sm" onClick={()=>setMonth(v=>v+1)} style={{width:32,height:32,padding:0,justifyContent:'center'}}>+</button>
+      <div className="fg"><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><label className="flabel" style={{margin:0}}>결제플랜</label><button className="btn btn-secondary btn-sm" onClick={continueFromLast} style={{fontSize:'.72rem',padding:'3px 10px'}}>이어하기</button></div>
+        <div className="session-toggle">
+          {[1,3,6,12].map(n=>(
+            <button key={n} className={`session-btn${month===n?' sel':''}`} onClick={()=>setMonth(n)} style={{width:'auto',borderRadius:20,padding:'6px 16px'}}>{n}달</button>
+          ))}
         </div>
       </div>
       <div className="fg"><label className="flabel">회차</label>
-        <div className="session-toggle">
-          {[1,2,3,4,5,6,7,8].map(n=>(
-            <button key={n} className={`session-btn${session===n?' sel':''}`} onClick={()=>setSession(n)}>{n}</button>
-          ))}
+        <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setSession(v=>Math.max(1,v-10))} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>−10</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setSession(v=>Math.max(1,v-5))} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>−5</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setSession(v=>Math.max(1,v-1))} style={{width:32,height:32,padding:0,justifyContent:'center'}}>−</button>
+          <input type="number" value={session} min={1}
+            onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v)&&v>=1)setSession(v);else if(e.target.value==='')setSession(1);}}
+            style={{width:56,textAlign:'center',fontWeight:700,fontSize:'1rem',border:'1.5px solid #e0e0e0',borderRadius:8,padding:'4px 0',outline:'none',MozAppearance:'textfield',WebkitAppearance:'none'}}/>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setSession(v=>v+1)} style={{width:32,height:32,padding:0,justifyContent:'center'}}>+</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setSession(v=>v+5)} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>+5</button>
+          <button className="btn btn-secondary btn-sm" onClick={()=>setSession(v=>v+10)} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>+10</button>
         </div>
       </div>
       <div className="fg"><label className="flabel">메모 ({notes.length}/500)</label>
@@ -1083,6 +1150,7 @@ function LessonCard({l, isTeacher, onEdit, onDel}) {
           <span className="lesson-session-badge">{l.month||1}개월 / {l.session}회차</span>
           {dateStr && <span className="lesson-time"><span className="lesson-time-icon">🗓</span>{dateStr}</span>}
           {timeStr && <span className="lesson-time"><span className="lesson-time-icon">🕐</span>{timeStr}</span>}
+          {(l.month||1)*4===l.session && <span style={{background:'#fdf4e7',color:'#8b6914',borderRadius:20,fontSize:'.72rem',fontWeight:600,padding:'4px 12px',whiteSpace:'nowrap',display:'inline-flex',alignItems:'center',gap:4}}>⚠ 수강 만료일</span>}
         </div>
         <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
           {isTeacher && (
@@ -1116,10 +1184,15 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
       </div>
     );
   }
-  // 개월차별 그룹핑, 그룹 내 회차 내림차순
+  // 실제 날짜 기준 월별 그룹핑, 그룹 내 회차 내림차순
   const groups = {};
-  lessons.forEach(l => { const m = l.month || 1; if (!groups[m]) groups[m] = []; groups[m].push(l); });
-  const sortedMonths = Object.keys(groups).map(Number).sort((a,b) => b - a);
+  lessons.forEach(l => {
+    const dateStr = l.startAt ? l.startAt.split('T')[0] : '';
+    const key = dateStr ? dateStr.substring(0, 7) : 'unknown'; // YYYY-MM
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(l);
+  });
+  const sortedMonths = Object.keys(groups).sort((a,b) => b.localeCompare(a));
   sortedMonths.forEach(m => groups[m].sort((a,b) => b.session - a.session));
   return (
     <div>
@@ -1133,7 +1206,7 @@ function LessonsPanel({lessons, isTeacher, onAdd, onEdit, onDel}) {
       {sortedMonths.map(m => (
         <div key={m} className="lesson-group">
           <div className="lesson-group-header">
-            <span className="lesson-group-badge">{m}개월차</span>
+            <span className="lesson-group-badge">{m !== 'unknown' ? `${m.substring(2,4)}년 ${parseInt(m.substring(5,7))}월` : '날짜 없음'}</span>
             <div className="lesson-group-line"/>
             <span className="lesson-group-count">{groups[m].length}회</span>
           </div>
@@ -1314,9 +1387,9 @@ function StudentView({studentId, isTeacher, studentDoc}) {
       </div>
 
       {aModal&&<AssignmentModal assignment={aModal.data} onSave={saveAssignment} onClose={()=>setAModal(null)}/>}
-      {pModal&&<PracticeModal dateStr={pModal} assignments={assignments} logs={logs} studentId={studentId} onClose={()=>setPModal(null)}/>}
+      {pModal&&<PracticeModal dateStr={pModal} assignments={assignments} logs={logs} lessons={lessons} studentId={studentId} onClose={()=>setPModal(null)}/>}
       {delConf&&<ConfirmModal msg={`"${delConf.song}" 숙제와 모든 연습 기록을 삭제할까요?`} onConfirm={()=>deleteAssignment(delConf)} onClose={()=>setDelConf(null)}/>}
-      {lModal&&<LessonModal lesson={lModal.data} onSave={saveLesson} onClose={()=>setLModal(null)}/>}
+      {lModal&&<LessonModal lesson={lModal.data} lessons={lessons} onSave={saveLesson} onClose={()=>setLModal(null)}/>}
       {lDelConf&&<ConfirmModal msg={`${fmtLessonDt(lDelConf.startAt)} 수업을 삭제할까요?`} onConfirm={()=>deleteLesson(lDelConf)} onClose={()=>setLDelConf(null)}/>}
     </div>
   );
@@ -1324,7 +1397,7 @@ function StudentView({studentId, isTeacher, studentDoc}) {
 
 // ── Day Lessons Modal (Teacher) ──
 function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
-  const dayLessons = lessons.filter(l=>l.startAt&&l.startAt.startsWith(dateStr));
+  const dayLessons = lessons.filter(l=>l.startAt&&l.startAt.startsWith(dateStr)).sort((a,b)=>(a.startAt||'').localeCompare(b.startAt||''));
   const [editing, setEditing] = React.useState({});
   const [saving, setSaving] = React.useState({});
   const [delConf, setDelConf] = React.useState(null);
@@ -1476,10 +1549,14 @@ function TeacherCalendar({students, lessons}) {
         {DAYS.map((d,i)=><div key={d} className={`day-lbl${i===0?' sun':i===6?' sat':''}`}>{d}</div>)}
         {cells.map((c,idx)=>{
           const dow=idx%7,isT=c.ds===ts;
-          const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(c.ds));
+          const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(c.ds)).sort((a,b)=>(a.startAt||'').localeCompare(b.startAt||''));
+          const dayEvents=STUDIO_EVENTS.filter(e=>e.date===c.ds);
           return (
             <div key={idx} className={`day-cell${isT?' today':''}${!c.cur?' other-month':''}`} onClick={()=>setDayModal(c.ds)} style={{cursor:'pointer'}}>
               <div className={`day-num${dow===0?' sun':dow===6?' sat':''}`}>{isT?<span className="today-bubble">{c.day}</span>:c.day}</div>
+              {dayEvents.map((ev,i)=>(
+                <div key={'ev'+i} className="a-tag" style={{background:'#d64b8a'}}><span className="a-tag-name">{ev.label}</span></div>
+              ))}
               {dayLessons.slice(0,3).map(l=>{
                 const st=studentMap[l.studentId];
                 const sTime=l.startAt?l.startAt.split('T')[1]:'';
@@ -1531,12 +1608,24 @@ function TeacherCalendar({students, lessons}) {
             {days.map(({date,ds},i)=>{
               const isT=ds===ts,dow=date.getDay();
               const dayLessons=lessons.filter(l=>l.startAt&&l.startAt.startsWith(ds));
+              const dayEvents=STUDIO_EVENTS.filter(e=>e.date===ds);
               return (
                 <div key={ds} className={`wtg-daycol${isT?' wtg-today':''}`} style={{height:24*HOUR_H}} onClick={()=>setDayModal(ds)}>
                   {Array.from({length:24},(_,h)=>(
                     <div key={h} className="wtg-slot"/>
                   ))}
                   {isT&&<div className="wtg-now-line" style={{top:nowTop}}><div className="wtg-now-dot"/></div>}
+                  {dayEvents.map((ev,ei)=>{
+                    const [eh,em]=ev.time.split(':').map(Number);
+                    const eTop=eh*HOUR_H+(em/60)*HOUR_H;
+                    const eHeight=(24*60-(eh*60+em))/60*HOUR_H;
+                    return (
+                      <div key={'ev'+ei} className="wtg-lesson" style={{top:eTop,height:Math.max(22,eHeight),background:'#d64b8a',borderColor:'#b33d73'}}>
+                        <div style={{fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ev.label}</div>
+                        {eHeight>=38&&<div style={{fontSize:'.63rem',opacity:.75}}>PM {(()=>{const h12=eh>12?eh-12:eh;return`${h12}:${String(em).padStart(2,'0')}`;})()}~</div>}
+                      </div>
+                    );
+                  })}
                   {dayLessons.map(l=>{
                     const st=studentMap[l.studentId];
                     if(!l.startAt||!l.endAt) return null;
@@ -1575,7 +1664,7 @@ function TeacherApp({user}) {
   const {students, loading} = useStudents();
   const allLessons = useAllLessons();
   const [selected, setSelected] = useState(null);
-  const [mainTab, setMainTab] = useState('students');
+  const [mainTab, setMainTab] = useState('calendar');
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState(null);
   const [delConfirm, setDelConfirm] = useState(null);
@@ -1624,8 +1713,8 @@ function TeacherApp({user}) {
       ) : (
         <>
           <div className="teacher-tabs">
-            <button className={`teacher-tab${mainTab==='students'?' active':''}`} onClick={()=>setMainTab('students')}>👥 학생 목록</button>
             <button className={`teacher-tab${mainTab==='calendar'?' active':''}`} onClick={()=>setMainTab('calendar')}>📅 캘린더</button>
+            <button className={`teacher-tab${mainTab==='students'?' active':''}`} onClick={()=>setMainTab('students')}>👥 학생 목록</button>
           </div>
 
           {mainTab==='students' && (
@@ -1642,37 +1731,36 @@ function TeacherApp({user}) {
               </div>
               {loading
                 ? <div className="loading-wrap"><div className="spinner"/></div>
-                : <div className="students-grid">
+                : <div className="student-list">
+                    <div className="student-list-header">
+                      <div className="sl-col sl-status">상태</div>
+                      <div className="sl-col sl-name">이름</div>
+                      <div className="sl-col sl-email">이메일</div>
+                      <div className="sl-col sl-pw">비밀번호</div>
+                      <div className="sl-col sl-date">등록일</div>
+                      <div className="sl-col sl-lessons">수업</div>
+                      <div className="sl-col sl-actions"></div>
+                    </div>
                     {filteredStudents.map(s=>{
                       const isActive = (s.enrollmentStatus || '수강 중') === '수강 중';
                       const lessonCnt = allLessons.filter(l=>l.studentId===s.id).length;
                       return (
-                        <div key={s.id} className={`student-card${isActive?'':' inactive-student'}`} onClick={()=>selectStudent(s)}>
-                          <div className="s-top">
-                            <div className="s-avatar" style={{background:avatarColor(s.name)}}>{avatarInitial(s.name)}</div>
-                            <div className="s-name">{s.name}</div>
-                          </div>
-                          <div className="s-info-list">
-                            <div className="s-info-row"><span className="s-icon">✉️</span><span>{s.email}</span></div>
-                            <PasswordCell password={s.password}/>
-                            {s.registeredAt && <div className="s-info-row"><span className="s-icon">📅</span><span>등록일&nbsp; {s.registeredAt}</span></div>}
-                            <div className="s-info-row"><span className="s-icon">🎹</span><span>수업 횟수&nbsp; {lessonCnt}회</span></div>
-                          </div>
-                          <div className="s-bottom">
-                            <div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div>
-                            <div className="s-card-actions" onClick={e=>e.stopPropagation()}>
-                              <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
-                              <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
-                              <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
-                            </div>
+                        <div key={s.id} className={`student-list-row${isActive?'':' inactive-student'}`} onClick={()=>selectStudent(s)}>
+                          <div className="sl-col sl-status"><div className={`enrollment-badge ${isActive?'active':'inactive'}`}>{s.enrollmentStatus||'수강 중'}</div></div>
+                          <div className="sl-col sl-name">{s.name}</div>
+                          <div className="sl-col sl-email">{s.email}</div>
+                          <div className="sl-col sl-pw" onClick={e=>e.stopPropagation()}><PasswordCell password={s.password}/></div>
+                          <div className="sl-col sl-date">{s.registeredAt||'—'}</div>
+                          <div className="sl-col sl-lessons">{lessonCnt}회</div>
+                          <div className="sl-col sl-actions" onClick={e=>e.stopPropagation()}>
+                            <button className="btn btn-secondary btn-sm" title={isActive?'수강 중단으로 변경':'수강 중으로 변경'} onClick={e=>toggleEnrollment(e,s)} style={{padding:'3px 7px'}}>{isActive?'⏸':'▶'}</button>
+                            <button className="btn btn-secondary btn-sm" onClick={()=>setEditModal(s)} style={{padding:'3px 7px'}}>✏️</button>
+                            <button className="btn btn-danger btn-sm" onClick={()=>setDelConfirm(s)} style={{padding:'3px 7px'}}>🗑</button>
                           </div>
                         </div>
                       );
                     })}
-                    <div className="student-card add-student-card" onClick={()=>setAddModal(true)}>
-                      <div className="add-icon">+</div>
-                      <div className="add-label">학생 추가</div>
-                    </div>
+                    <div className="student-list-add" onClick={()=>setAddModal(true)}>+ 학생 추가</div>
                   </div>
               }
             </div>
@@ -1789,7 +1877,7 @@ function BirthdayModal({onClose}) {
             생일 축하드려요!
           </div>
           <div style={{fontSize:'.92rem',color:'#444',lineHeight:1.8,marginBottom:24,whiteSpace:'pre-line'}}>
-            {`해피 조조의 한번뿐인\n2026년도 생일을 축하드립니다 :)\n\n올해에는 더 행복한 일들만 가득해서\n웃는 날이 더 많기를 바라며~\n\nPS. PT는 꼭 성공하길! 🤣🤣`}
+            {`해피 조조의 한번뿐인\n2026년도 생일을 축하드립니다 :)\n\n올해에는 더 행복+재미난 일들이 가득해서\n웃는 날이 더 많기를 바라며~\n\nPS. PT는 꼭 성공하길! 🤣🤣`}
           </div>
           <button className="btn btn-primary" onClick={fireConfetti} style={{width:'100%',justifyContent:'center',padding:'11px'}}>생.일.선.물. 🎉</button>
         </div>
@@ -1811,7 +1899,7 @@ function App() {
       setAuthUser(user);
       if (user) {
         const today = new Date();
-        if (user.email === 'mojojazzpiano@naver.com' && today <= new Date('2026-03-31T23:59:59')) {
+        if (user.email === 'mojo@naver.com' && today <= new Date('2026-03-31T23:59:59')) {
           setShowBirthday(true);
         }
         try {
