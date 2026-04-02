@@ -1843,7 +1843,7 @@ function UpdatesPanel({updates, isAdmin}) {
   return (
     <div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <div style={{fontSize:'1.05rem',fontWeight:700,color:'#1d1d1f'}}>이번 업데이트로 이렇게 달라졌어요 ✨</div>
+        <div style={{fontSize:'1.05rem',fontWeight:700,color:'#1d1d1f',paddingLeft:8}}>이번 업데이트로 이렇게 달라졌어요 ✨</div>
         {isAdmin && !adding && (
           <button onClick={()=>{setAdding(true);setForm(f=>({...f,date:todayISO}));}} className="btn btn-primary btn-sm" style={{flexShrink:0,marginLeft:12}}>+ 업데이트 작성</button>
         )}
