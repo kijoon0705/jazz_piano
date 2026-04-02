@@ -1797,6 +1797,7 @@ const UPDATE_TYPES = [
 ];
 function UpdatesPanel({updates, isAdmin}) {
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({type:'신규',title:'',desc:'',date:''});
   const [saving, setSaving] = useState(false);
   const [delConf, setDelConf] = useState(null);
@@ -1804,14 +1805,20 @@ function UpdatesPanel({updates, isAdmin}) {
   const pad=n=>String(n).padStart(2,'0');
   const todayISO=`${new Date().getFullYear()}-${pad(new Date().getMonth()+1)}-${pad(new Date().getDate())}`;
   const setF=(k,v)=>setForm(p=>({...p,[k]:v}));
+  const resetForm = () => { setForm({type:'신규',title:'',desc:'',date:''}); setAdding(false); setEditingId(null); };
+
+  const startEdit = u => {
+    setEditingId(u.id);
+    setAdding(true);
+    setForm({type:u.type||'신규', title:u.title||'', desc:u.desc||'', date:u.date||''});
+  };
 
   const handleSave = async () => {
     if(!form.title.trim()) return;
     setSaving(true);
-    await fsSaveUpdate({type:form.type, title:form.title.trim(), desc:form.desc.trim(), date:form.date||todayISO});
+    await fsSaveUpdate({id:editingId||undefined, type:form.type, title:form.title.trim(), desc:form.desc.trim(), date:form.date||todayISO});
     setSaving(false);
-    setAdding(false);
-    setForm({type:'신규',title:'',desc:'',date:''});
+    resetForm();
   };
 
   const handleDelete = async id => { await fsDeleteUpdate(id); setDelConf(null); };
@@ -1840,7 +1847,7 @@ function UpdatesPanel({updates, isAdmin}) {
       )}
       {adding && (
         <div className="update-add-form">
-          <div style={{fontWeight:700,fontSize:'.95rem',marginBottom:12}}>업데이트 작성</div>
+          <div style={{fontWeight:700,fontSize:'.95rem',marginBottom:12}}>{editingId?'업데이트 수정':'업데이트 작성'}</div>
           <div className="frow">
             <div className="fg"><label className="flabel">날짜</label>
               <input className="finput" type="date" value={form.date||todayISO} onChange={e=>setF('date',e.target.value)}/></div>
@@ -1854,7 +1861,7 @@ function UpdatesPanel({updates, isAdmin}) {
           <div className="fg"><label className="flabel">설명</label>
             <textarea className="finput" value={form.desc} onChange={e=>setF('desc',e.target.value)} rows={3} style={{resize:'vertical',lineHeight:1.6}} placeholder="선택사항"/></div>
           <div style={{display:'flex',gap:6,justifyContent:'flex-end',marginTop:8}}>
-            <button className="btn btn-secondary" onClick={()=>{setAdding(false);setForm({type:'신규',title:'',desc:'',date:''});}}>취소</button>
+            <button className="btn btn-secondary" onClick={resetForm}>취소</button>
             <button className="btn btn-primary" disabled={!form.title.trim()||saving} onClick={handleSave}>{saving?'저장 중…':'저장'}</button>
           </div>
         </div>
@@ -1877,7 +1884,10 @@ function UpdatesPanel({updates, isAdmin}) {
                         <span className={`update-type-badge ${typeCls(u.type)}`}>{u.type}</span>
                         <span className="update-item-title">{u.title}</span>
                       </div>
-                      {isAdmin&&<button className="day-modal-icon-btn" style={{flexShrink:0,marginLeft:8}} onClick={()=>setDelConf(u.id)}>🗑</button>}
+                      {isAdmin&&<div style={{display:'flex',gap:6,flexShrink:0,marginLeft:8}}>
+                        <button className="day-modal-icon-btn" onClick={()=>startEdit(u)}>✏️</button>
+                        <button className="day-modal-icon-btn" onClick={()=>setDelConf(u.id)}>🗑</button>
+                      </div>}
                     </div>
                     {u.desc&&<div className="update-item-desc">{u.desc}</div>}
                   </div>
