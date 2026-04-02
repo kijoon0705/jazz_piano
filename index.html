@@ -1396,12 +1396,43 @@ function StudentView({studentId, isTeacher, studentDoc}) {
 }
 
 // ── Day Lessons Modal (Teacher) ──
-function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
+function DayLessonsModal({dateStr, lessons, studentMap, students, onClose}) {
   const dayLessons = lessons.filter(l=>l.startAt&&l.startAt.startsWith(dateStr)).sort((a,b)=>(a.startAt||'').localeCompare(b.startAt||''));
   const [editing, setEditing] = React.useState({});
   const [saving, setSaving] = React.useState({});
   const [delConf, setDelConf] = React.useState(null);
   const [expanded, setExpanded] = React.useState({});
+  const [adding, setAdding] = React.useState(false);
+  const [addForm, setAddForm] = React.useState({studentId:'',sTime:'',eTime:'',month:1,session:1,notes:''});
+  const [addSaving, setAddSaving] = React.useState(false);
+
+  const activeStudents = (students||[]).filter(s=>(s.enrollmentStatus||'수강 중')==='수강 중').sort((a,b)=>a.name.localeCompare(b.name));
+
+  const setAF = (k,v) => setAddForm(p=>({...p,[k]:v}));
+  const addMins = mins => {
+    if(!addForm.sTime) return;
+    const pad=n=>String(n).padStart(2,'0');
+    const [h,m]=addForm.sTime.split(':').map(Number);
+    const total=h*60+m+mins;
+    setAF('eTime',`${pad(Math.floor(total/60)%24)}:${pad(total%60)}`);
+  };
+  const continueFromLast = () => {
+    if(!addForm.studentId) return;
+    const sorted = lessons.filter(l=>l.studentId===addForm.studentId&&l.startAt).sort((a,b)=>b.startAt.localeCompare(a.startAt));
+    if(sorted.length===0) return;
+    const last=sorted[0];
+    setAF('month',last.month||1);
+    setAF('session',(last.session||1)+1);
+  };
+  const addValid = addForm.studentId && addForm.sTime && addForm.eTime;
+  const handleAdd = async () => {
+    if(!addValid) return;
+    setAddSaving(true);
+    await fsSaveLesson({startAt:`${dateStr}T${addForm.sTime}`,endAt:`${dateStr}T${addForm.eTime}`,month:addForm.month,session:addForm.session,notes:addForm.notes}, addForm.studentId);
+    setAddSaving(false);
+    setAdding(false);
+    setAddForm({studentId:'',sTime:'',eTime:'',month:1,session:1,notes:''});
+  };
 
   const startEdit = l => setEditing(p=>({...p,[l.id]:{sTime:l.startAt?l.startAt.split('T')[1]:'',eTime:l.endAt?l.endAt.split('T')[1]:'',notes:l.notes||''}}));
   const cancelEdit = id => setEditing(p=>{const n={...p};delete n[id];return n;});
@@ -1494,6 +1525,62 @@ function DayLessonsModal({dateStr, lessons, studentMap, onClose}) {
           );
         })
       }
+      {students && !adding && (
+        <button onClick={()=>setAdding(true)} style={{width:'100%',padding:'12px',background:'#f8f9fb',border:'1.5px dashed #d0d0d0',borderRadius:12,cursor:'pointer',color:'#888',fontWeight:600,fontSize:'.85rem',marginTop:8,transition:'all .15s'}}
+          onMouseOver={e=>{e.currentTarget.style.borderColor='#007aff';e.currentTarget.style.color='#007aff';e.currentTarget.style.background='#f0f5ff';}}
+          onMouseOut={e=>{e.currentTarget.style.borderColor='#d0d0d0';e.currentTarget.style.color='#888';e.currentTarget.style.background='#f8f9fb';}}>+ 수업 추가</button>
+      )}
+      {adding && (
+        <div style={{background:'#f0f5ff',borderRadius:12,padding:16,marginTop:8}}>
+          <div style={{fontWeight:700,fontSize:'.9rem',marginBottom:12,color:'#1d1d1f'}}>수업 추가</div>
+          <div className="fg"><label className="flabel">학생 *</label>
+            <select className="finput" value={addForm.studentId} onChange={e=>setAF('studentId',e.target.value)}>
+              <option value="">학생 선택</option>
+              {activeStudents.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="frow">
+            <div className="fg"><label className="flabel">시작 시간 *</label>
+              <input className="finput" type="time" value={addForm.sTime} onChange={e=>setAF('sTime',e.target.value)}/></div>
+            <div className="fg"><label className="flabel">종료 시간 *</label>
+              <input className="finput" type="time" value={addForm.eTime} onChange={e=>setAF('eTime',e.target.value)}/></div>
+          </div>
+          <div className="fg"><label className="flabel">종료 시간 빠른 설정</label>
+            <div style={{display:'flex',gap:6,marginTop:4}}>
+              {[15,30,45,60].map(m=>(
+                <button key={m} className="btn btn-secondary btn-sm" onClick={()=>addMins(m)} style={{flex:1,justifyContent:'center'}}>+{m}분</button>
+              ))}
+            </div>
+          </div>
+          <div className="fg"><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><label className="flabel" style={{margin:0}}>결제플랜</label><button className="btn btn-secondary btn-sm" onClick={continueFromLast} style={{fontSize:'.72rem',padding:'3px 10px'}}>이어하기</button></div>
+            <div className="session-toggle">
+              {[1,3,6,12].map(n=>(
+                <button key={n} className={`session-btn${addForm.month===n?' sel':''}`} onClick={()=>setAF('month',n)} style={{width:'auto',borderRadius:20,padding:'6px 16px'}}>{n}달</button>
+              ))}
+            </div>
+          </div>
+          <div className="fg"><label className="flabel">회차</label>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setAF('session',Math.max(1,addForm.session-10))} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>−10</button>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setAF('session',Math.max(1,addForm.session-5))} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>−5</button>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setAF('session',Math.max(1,addForm.session-1))} style={{width:32,height:32,padding:0,justifyContent:'center'}}>−</button>
+              <input type="number" value={addForm.session} min={1}
+                onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v)&&v>=1)setAF('session',v);else if(e.target.value==='')setAF('session',1);}}
+                style={{width:56,textAlign:'center',fontWeight:700,fontSize:'1rem',border:'1.5px solid #e0e0e0',borderRadius:8,padding:'4px 0',outline:'none',MozAppearance:'textfield',WebkitAppearance:'none'}}/>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setAF('session',addForm.session+1)} style={{width:32,height:32,padding:0,justifyContent:'center'}}>+</button>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setAF('session',addForm.session+5)} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>+5</button>
+              <button className="btn btn-secondary btn-sm" onClick={()=>setAF('session',addForm.session+10)} style={{width:36,height:32,padding:0,justifyContent:'center',fontSize:'.7rem'}}>+10</button>
+            </div>
+          </div>
+          <div className="fg"><label className="flabel">메모 ({addForm.notes.length}/500)</label>
+            <textarea className="finput" value={addForm.notes} maxLength={500} onChange={e=>setAF('notes',e.target.value)}
+              rows={3} style={{resize:'vertical',lineHeight:1.6}} placeholder="선택사항"/></div>
+          <div style={{display:'flex',gap:6,justifyContent:'flex-end',marginTop:8}}>
+            <button className="btn btn-secondary" onClick={()=>{setAdding(false);setAddForm({studentId:'',sTime:'',eTime:'',month:1,session:1,notes:''});}}>취소</button>
+            <button className="btn btn-primary" disabled={!addValid||addSaving} onClick={handleAdd}>{addSaving?'저장 중…':'저장'}</button>
+          </div>
+        </div>
+      )}
       {delConf&&<ConfirmModal msg={`${studentMap[delConf.studentId]?.name||'?'} 학생의 수업을 삭제할까요?`} onConfirm={()=>del(delConf)} onClose={()=>setDelConf(null)}/>}
     </Modal>
   );
@@ -1654,7 +1741,7 @@ function TeacherCalendar({students, lessons}) {
     <div>
       {navBar}
       {calView}
-      {dayModal&&<DayLessonsModal dateStr={dayModal} lessons={lessons} studentMap={studentMap} onClose={()=>setDayModal(null)}/>}
+      {dayModal&&<DayLessonsModal dateStr={dayModal} lessons={lessons} studentMap={studentMap} students={students} onClose={()=>setDayModal(null)}/>}
     </div>
   );
 }
