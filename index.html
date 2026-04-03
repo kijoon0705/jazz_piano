@@ -1925,13 +1925,28 @@ function TeacherApp({user}) {
 
   const pad2=n=>String(n).padStart(2,'0');
   const todayKey=`${new Date().getFullYear()}-${pad2(new Date().getMonth()+1)}-${pad2(new Date().getDate())}`;
-  const hasTodayUpdate = updates.some(u=>u.date===todayKey);
-  const seenDate = localStorage.getItem('updates_seen_date');
-  const showNewBubble = hasTodayUpdate && (isAdmin ? true : seenDate !== todayKey);
+  const latestUpdateDate = updates.length>0 ? updates.reduce((max,u)=>u.date>max?u.date:max,'') : '';
+  const seenDate = localStorage.getItem('updates_seen_date') || '';
+  // admin: 새 업데이트 있으면 하루 종일 보임 (탭 클릭해도 유지, 다음 날 접속 시 사라짐)
+  // 선생님: 새 업데이트 있으면 보이고 탭 클릭 시 사라짐
+  const adminLastSeen = localStorage.getItem('updates_admin_seen') || '';
+  const showNewBubble = isAdmin
+    ? latestUpdateDate > adminLastSeen
+    : latestUpdateDate > seenDate;
+
+  useEffect(() => {
+    // admin: 매일 접속 시 전날까지의 업데이트를 seen 처리 (오늘 것은 유지)
+    if (isAdmin && latestUpdateDate) {
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+      const yKey = `${yesterday.getFullYear()}-${pad2(yesterday.getMonth()+1)}-${pad2(yesterday.getDate())}`;
+      const stored = localStorage.getItem('updates_admin_seen') || '';
+      if (stored < yKey) localStorage.setItem('updates_admin_seen', yKey);
+    }
+  }, [isAdmin, latestUpdateDate]);
 
   const handleUpdatesTab = () => {
     setMainTab('updates');
-    if (!isAdmin) localStorage.setItem('updates_seen_date', todayKey);
+    if (!isAdmin && latestUpdateDate) localStorage.setItem('updates_seen_date', latestUpdateDate);
   };
 
   useEffect(() => {
